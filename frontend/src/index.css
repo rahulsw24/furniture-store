@@ -1,0 +1,18 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+@import "tailwindcss";
+@theme {
+  /* Colors */
+  --color-site-bg: #f9f9f7;
+  --color-site-black: #1a1a1a;
+  --color-site-gray: #707070;
+
+  /* Fonts */
+  --font-serif: "DM Serif Display", serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-site-bg text-site-black font-sans antialiased;
+  }
+}
