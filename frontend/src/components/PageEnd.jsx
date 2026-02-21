@@ -46,88 +46,11 @@ const Newsletter = () => (
     </section>
 );
 
-const Footer = () => {
-    const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    return (
-        <footer className="bg-black text-white pt-20 pb-12 px-6 md:px-12 relative">
-            <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-x-24 mb-20">
-
-                {/* Column 1: QUICK LINKS */}
-                <div>
-                    <h4 className="text-[11px] font-bold tracking-[0.25em] mb-10 text-white uppercase">QUICK LINKS</h4>
-                    <ul className="space-y-4">
-                        {['Bundle and Save', 'Products', 'Favorite Finishes', 'Tutorials', 'How to Assemble', 'Our Story', 'Reach out'].map((link) => (
-                            <li key={link}>
-                                <a href="#" className="text-[14px] text-gray-400 hover:text-white hover:underline underline-offset-8 transition-all">
-                                    {link}
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                {/* Column 2: Follow us */}
-                <div>
-                    <h4 className="text-[15px] font-bold mb-6 text-white">Follow us</h4>
-                    <p className="text-gray-400 text-[14px] mb-8 max-w-[280px] leading-relaxed">
-                        Get inspiration and see what we're up to on Social Media
-                    </p>
-                    <div className="flex gap-6 items-center text-white">
-                        <Facebook size={18} className="cursor-pointer hover:text-gray-400" strokeWidth={1.5} />
-                        <Instagram size={18} className="cursor-pointer hover:text-gray-400" strokeWidth={1.5} />
-                        <div className="cursor-pointer hover:text-gray-400"><PinterestIcon /></div>
-                        <div className="cursor-pointer hover:text-gray-400"><TikTokIcon /></div>
-                        <Twitter size={18} className="cursor-pointer hover:text-gray-400" strokeWidth={1.5} />
-                        <Youtube size={20} className="cursor-pointer hover:text-gray-400" strokeWidth={1.5} />
-                    </div>
-                </div>
-
-                {/* Column 3: Quick links */}
-                <div>
-                    <h4 className="text-[11px] font-bold tracking-[0.25em] mb-10 text-white uppercase">Quick links</h4>
-                    <ul className="space-y-4">
-                        {[
-                            'Favorite Finishes', 'Search', 'About us', 'Contact Us',
-                            'Shipping Policy', 'Return Policy', 'Terms of Service',
-                            'Privacy Policy', 'Your Privacy Choices'
-                        ].map((link) => (
-                            <li key={link}>
-                                <a href="#" className="text-[14px] text-gray-400 hover:text-white hover:underline underline-offset-8 transition-all">
-                                    {link}
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-
-            {/* Bottom Copyright Row - Exactly as shown in Screenshot 7.17.55 PM */}
-            <div className="max-w-[1440px] mx-auto pt-8 border-t border-gray-800">
-                <p className="text-xs text-gray-400">
-                    Copyright © 2026 <a href="#" className="underline underline-offset-2">unfnshed</a>.
-                </p>
-            </div>
-
-            {/* Floating Scroll to Top */}
-            <button
-                onClick={scrollToTop}
-                className="absolute bottom-12 right-6 md:right-12 flex flex-col items-center gap-2 group"
-            >
-                <div className="w-11 h-11 rounded-full border border-gray-700 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all">
-                    <ArrowUp size={18} />
-                </div>
-                <span className="text-[10px] font-bold tracking-[0.2em] text-gray-500 uppercase">TOP</span>
-            </button>
-        </footer>
-    );
-};
-
 export default function PageEnd() {
     return (
         <>
             <Newsletter />
-            <Footer />
+
         </>
     );
 }

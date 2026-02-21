@@ -9,6 +9,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Categories } from './collections/Categories'
 import { Products } from './collections/Products'
+import { Orders } from './collections/Orders'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -20,7 +21,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Categories, Products],
+  collections: [Users, Media, Categories, Products, Orders],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -31,6 +32,10 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URL || '',
     },
   }),
+  cors: [
+    'http://localhost:5173', // Vite default
+    'http://127.0.0.1:5173',
+  ],
   sharp,
   plugins: [],
 })
