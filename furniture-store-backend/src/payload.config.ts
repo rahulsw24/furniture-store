@@ -39,10 +39,12 @@ export default buildConfig({
     'http://localhost:5173', // Vite default
     'http://127.0.0.1:5173',
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
+    'https://furniture-store-pi-drab.vercel.app',
   ],
   csrf: [
     'http://localhost:5173',
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
+    'https://furniture-store-pi-drab.vercel.app',
   ],
   sharp,
   endpoints: [
