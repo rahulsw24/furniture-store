@@ -20,6 +20,7 @@ import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
 import OrderDetails from './pages/Order/OrderDetails';
 import Addresses from './pages/Addresses';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 
 
