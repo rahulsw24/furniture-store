@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, CheckCircle2 } from 'lucide-react';
 import { getAllProducts } from '../api/products';
+import { getImageUrl } from '../utils/getImageUrl';
+
 
 const ProductListing = () => {
     const [products, setProducts] = useState([]);
@@ -110,12 +112,8 @@ const BASE_URL = import.meta.env.VITE_API_URL
 
 const ListingCard = ({ product }) => {
 
-    const imageUrl =
-        product.images?.[0]?.url
-            ? product.images[0].url.startsWith('http')
-                ? product.images[0].url
-                : BASE_URL + product.images[0].url
-            : 'https://via.placeholder.com/600x600?text=No+Image'
+    // Clean and simple
+    const imageUrl = getImageUrl(product);
 
     return (
         <div className="group flex flex-col h-full">

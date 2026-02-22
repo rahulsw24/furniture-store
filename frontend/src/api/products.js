@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:3000/api";
+const API_BASE = `${import.meta.env.VITE_API_URL}/api`;
 
 export async function getAllProducts() {
   const res = await fetch(`${API_BASE}/products`);
@@ -10,12 +10,10 @@ export async function getAllProducts() {
 }
 
 export async function getProductBySlug(slug) {
-  const res = await fetch(
-    `${API_BASE}/products?where[slug][equals]=${slug}`
-  )
+  const res = await fetch(`${API_BASE}/products?where[slug][equals]=${slug}`);
 
-  if (!res.ok) throw new Error('Failed to fetch product')
+  if (!res.ok) throw new Error("Failed to fetch product");
 
-  const data = await res.json()
-  return data.docs[0]
+  const data = await res.json();
+  return data.docs[0];
 }

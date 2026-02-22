@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom' // Import Link for navigation
 import { Star } from 'lucide-react'
 import { getAllProducts } from '../api/products'
+import { getImageUrl } from '../utils/getImageUrl'
+
 
 // Ensure this matches your Payload CMS image URL structure
 const BASE_URL = import.meta.env.VITE_API_URL
@@ -10,7 +12,7 @@ const BASE_URL = import.meta.env.VITE_API_URL
 
 const ProductCard = ({ product }) => {
     // Payload uses the 'url' field directly for Cloudinary images usually
-    const imageUrl = product.images?.[0]?.url ? BASE_URL + product.images[0].url : 'https://via.placeholder.com/600x600?text=No+Image'
+    const imageUrl = getImageUrl(product); // Fixed!
 
     return (
         // Wrap the card in a Link component pointing to the slug

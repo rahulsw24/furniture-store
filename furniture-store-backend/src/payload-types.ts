@@ -72,6 +72,7 @@ export interface Config {
     categories: Category;
     products: Product;
     orders: Order;
+    coupons: Coupon;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -84,6 +85,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    coupons: CouponsSelect<false> | CouponsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -171,8 +173,8 @@ export interface User {
  */
 export interface Media {
   id: number;
-  public_id?: string | null;
   alt: string;
+  cloudinary_url?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -212,6 +214,7 @@ export interface Product {
   images: (number | Media)[];
   category: number | Category;
   stock: number;
+  low_stock_threshold?: number | null;
   is_active?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -268,6 +271,25 @@ export interface Order {
   };
   customer_note?: string | null;
   admin_note?: string | null;
+  paid_at?: string | null;
+  delivered_at?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  min_order?: number | null;
+  usage_limit?: number | null;
+  used_count?: number | null;
+  expires_at?: string | null;
+  is_active?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -314,6 +336,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'coupons';
+        value: number | Coupon;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -404,8 +430,8 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  public_id?: T;
   alt?: T;
+  cloudinary_url?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -443,6 +469,7 @@ export interface ProductsSelect<T extends boolean = true> {
   images?: T;
   category?: T;
   stock?: T;
+  low_stock_threshold?: T;
   is_active?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -504,6 +531,24 @@ export interface OrdersSelect<T extends boolean = true> {
       };
   customer_note?: T;
   admin_note?: T;
+  paid_at?: T;
+  delivered_at?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons_select".
+ */
+export interface CouponsSelect<T extends boolean = true> {
+  code?: T;
+  type?: T;
+  value?: T;
+  min_order?: T;
+  usage_limit?: T;
+  used_count?: T;
+  expires_at?: T;
+  is_active?: T;
   updatedAt?: T;
   createdAt?: T;
 }

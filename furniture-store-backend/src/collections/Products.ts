@@ -58,6 +58,11 @@ export const Products: CollectionConfig = {
       required: true,
       defaultValue: 0,
     },
+    {
+      name: 'low_stock_threshold',
+      type: 'number',
+      defaultValue: 5,
+    },
 
     {
       name: 'is_active',

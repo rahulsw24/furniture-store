@@ -10,6 +10,9 @@ import { Media } from './collections/Media'
 import { Categories } from './collections/Categories'
 import { Products } from './collections/Products'
 import { Orders } from './collections/Orders'
+import { Coupons } from './collections/Coupons'
+import { createOrder } from './api/create-order'
+import { validateCoupon } from './api/validate-coupon'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -21,7 +24,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Categories, Products, Orders],
+  collections: [Users, Media, Categories, Products, Orders, Coupons],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -38,5 +41,9 @@ export default buildConfig({
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app/',
   ],
   sharp,
+  endpoints: [
+    { path: '/create-order', method: 'post', handler: createOrder },
+    { path: '/validate-coupon', method: 'post', handler: validateCoupon },
+  ],
   plugins: [],
 })

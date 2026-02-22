@@ -169,16 +169,16 @@ export const Orders: CollectionConfig = {
       name: 'order_status',
       type: 'select',
       options: [
-        'pending',
-        'confirmed',
-        'processing',
-        'shipped',
-        'out_for_delivery',
-        'delivered',
-        'cancelled',
-        'returned',
+        { label: 'Pending', value: 'pending' },
+        { label: 'Confirmed', value: 'confirmed' },
+        { label: 'Processing', value: 'processing' },
+        { label: 'Shipped', value: 'shipped' },
+        { label: 'Out For Delivery', value: 'out_for_delivery' },
+        { label: 'Delivered', value: 'delivered' },
+        { label: 'Cancelled', value: 'cancelled' },
+        { label: 'Returned', value: 'returned' },
       ],
-      defaultValue: 'pending',
+      defaultValue: 'pending', // Make sure this is lowercase too!
     },
 
     /* ================= SHIPPING ================= */
@@ -219,6 +219,16 @@ export const Orders: CollectionConfig = {
       name: 'admin_note',
       type: 'textarea',
       admin: { position: 'sidebar' },
+    },
+
+    {
+      name: 'paid_at',
+      type: 'date',
+    },
+
+    {
+      name: 'delivered_at',
+      type: 'date',
     },
   ],
 }
