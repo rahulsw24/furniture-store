@@ -2,6 +2,9 @@ import type { CollectionConfig } from 'payload'
 
 export const Products: CollectionConfig = {
   slug: 'products',
+  access: {
+    read: () => true, // 🔥 allow public read
+  },
   admin: {
     useAsTitle: 'name',
   },
@@ -54,6 +57,11 @@ export const Products: CollectionConfig = {
       type: 'number',
       required: true,
       defaultValue: 0,
+    },
+    {
+      name: 'low_stock_threshold',
+      type: 'number',
+      defaultValue: 5,
     },
 
     {

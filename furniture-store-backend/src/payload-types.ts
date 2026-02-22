@@ -71,6 +71,8 @@ export interface Config {
     media: Media;
     categories: Category;
     products: Product;
+    orders: Order;
+    coupons: Coupon;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +84,8 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
+    coupons: CouponsSelect<false> | CouponsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -126,17 +130,24 @@ export interface User {
   id: number;
   name?: string | null;
   phone?: string | null;
+  avatar?: (number | null) | Media;
+  role: 'customer' | 'admin';
   addresses?:
     | {
-        line1?: string | null;
+        label?: string | null;
+        full_name: string;
+        phone: string;
+        line1: string;
         line2?: string | null;
-        city?: string | null;
-        state?: string | null;
-        postal_code?: string | null;
+        city: string;
+        state: string;
+        postal_code: string;
         country?: string | null;
+        is_default?: boolean | null;
         id?: string | null;
       }[]
     | null;
+  last_login?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -162,8 +173,8 @@ export interface User {
  */
 export interface Media {
   id: number;
-  public_id?: string | null;
   alt: string;
+  cloudinary_url?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -203,6 +214,81 @@ export interface Product {
   images: (number | Media)[];
   category: number | Category;
   stock: number;
+  low_stock_threshold?: number | null;
+  is_active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  user?: (number | null) | User;
+  customer_email: string;
+  customer_phone?: string | null;
+  order_number?: string | null;
+  items: {
+    product: number | Product;
+    product_name: string;
+    product_image?: string | null;
+    quantity: number;
+    unit_price: number;
+    subtotal: number;
+    id?: string | null;
+  }[];
+  subtotal: number;
+  shipping_cost?: number | null;
+  tax?: number | null;
+  discount?: number | null;
+  total: number;
+  currency?: string | null;
+  payment_method?: ('razorpay' | 'cod' | 'card' | 'upi') | null;
+  payment_status?: ('pending' | 'paid' | 'failed' | 'refunded') | null;
+  payment_details?: {
+    razorpay_order_id?: string | null;
+    razorpay_payment_id?: string | null;
+    razorpay_signature?: string | null;
+  };
+  order_status?:
+    | ('pending' | 'confirmed' | 'processing' | 'shipped' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'returned')
+    | null;
+  shipping_address: {
+    full_name: string;
+    phone: string;
+    line1: string;
+    line2?: string | null;
+    city: string;
+    state: string;
+    postal_code: string;
+    country?: string | null;
+  };
+  tracking?: {
+    carrier?: string | null;
+    tracking_number?: string | null;
+    tracking_url?: string | null;
+  };
+  customer_note?: string | null;
+  admin_note?: string | null;
+  paid_at?: string | null;
+  delivered_at?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  min_order?: number | null;
+  usage_limit?: number | null;
+  used_count?: number | null;
+  expires_at?: string | null;
   is_active?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -246,6 +332,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'products';
         value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'coupons';
+        value: number | Coupon;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -296,17 +390,24 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   phone?: T;
+  avatar?: T;
+  role?: T;
   addresses?:
     | T
     | {
+        label?: T;
+        full_name?: T;
+        phone?: T;
         line1?: T;
         line2?: T;
         city?: T;
         state?: T;
         postal_code?: T;
         country?: T;
+        is_default?: T;
         id?: T;
       };
+  last_login?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -329,8 +430,8 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  public_id?: T;
   alt?: T;
+  cloudinary_url?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -368,6 +469,85 @@ export interface ProductsSelect<T extends boolean = true> {
   images?: T;
   category?: T;
   stock?: T;
+  low_stock_threshold?: T;
+  is_active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  user?: T;
+  customer_email?: T;
+  customer_phone?: T;
+  order_number?: T;
+  items?:
+    | T
+    | {
+        product?: T;
+        product_name?: T;
+        product_image?: T;
+        quantity?: T;
+        unit_price?: T;
+        subtotal?: T;
+        id?: T;
+      };
+  subtotal?: T;
+  shipping_cost?: T;
+  tax?: T;
+  discount?: T;
+  total?: T;
+  currency?: T;
+  payment_method?: T;
+  payment_status?: T;
+  payment_details?:
+    | T
+    | {
+        razorpay_order_id?: T;
+        razorpay_payment_id?: T;
+        razorpay_signature?: T;
+      };
+  order_status?: T;
+  shipping_address?:
+    | T
+    | {
+        full_name?: T;
+        phone?: T;
+        line1?: T;
+        line2?: T;
+        city?: T;
+        state?: T;
+        postal_code?: T;
+        country?: T;
+      };
+  tracking?:
+    | T
+    | {
+        carrier?: T;
+        tracking_number?: T;
+        tracking_url?: T;
+      };
+  customer_note?: T;
+  admin_note?: T;
+  paid_at?: T;
+  delivered_at?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons_select".
+ */
+export interface CouponsSelect<T extends boolean = true> {
+  code?: T;
+  type?: T;
+  value?: T;
+  min_order?: T;
+  usage_limit?: T;
+  used_count?: T;
+  expires_at?: T;
   is_active?: T;
   updatedAt?: T;
   createdAt?: T;

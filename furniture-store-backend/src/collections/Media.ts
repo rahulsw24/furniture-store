@@ -5,68 +5,72 @@ export const Media: CollectionConfig = {
   slug: 'media',
   access: {
     read: () => true,
+    create: () => true,
+    update: () => true,
+    delete: () => true,
   },
   upload: {
     staticDir: 'media',
-    // Optional: add image sizes if you want Payload to handle thumbnails
-    adminThumbnail: 'thumbnail',
+    disableLocalStorage: true,
+    // We point the thumbnail directly to our custom field
+    adminThumbnail: ({ doc }) => doc.cloudinary_url as string,
     mimeTypes: ['image/*'],
   },
   hooks: {
     beforeChange: [
       async ({ data, req }) => {
         const file = req.file
-
-        // 1. Check if a file is actually being uploaded
         if (!file || !file.data) return data
 
-        // 2. Wrap the Cloudinary stream in a Promise
-        return new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
+        const uploaded = await new Promise<any>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
             {
               folder: 'furniture-store',
               resource_type: 'image',
             },
             (error, result) => {
-              if (error || !result) {
-                return reject(error || new Error('Cloudinary upload failed'))
-              }
-
-              // 3. Return the data to Payload to be saved in the database
-              resolve({
-                ...data,
-                url: result.secure_url,
-                public_id: result.public_id,
-              })
+              if (error || !result) reject(error)
+              else resolve(result)
             },
           )
-
-          // 4. Send the file buffer (file.data) to Cloudinary
-          uploadStream.end(file.data)
+          stream.end(file.data)
         })
+
+        return {
+          ...data,
+          // We save it here to keep it safe from Payload's internal overwriting
+          cloudinary_url: uploaded.secure_url,
+          url: uploaded.secure_url,
+          filename: `${uploaded.public_id}.${uploaded.format}`,
+          public_id: uploaded.public_id,
+          mimeType: uploaded.resource_type + '/' + uploaded.format,
+          filesize: uploaded.bytes,
+          width: uploaded.width,
+          height: uploaded.height,
+        }
       },
     ],
   },
   fields: [
+    { name: 'alt', type: 'text', required: true },
     {
-      name: 'url',
-      type: 'text',
-      admin: {
-        readOnly: true, // Prevent users from accidentally changing the URL
-      },
-    },
-    {
-      name: 'public_id',
+      name: 'cloudinary_url',
       type: 'text',
       admin: {
         readOnly: true,
-        hidden: true, // Keep this hidden unless you need it for debugging
       },
     },
+    // We add a 'virtual' field that mirrors cloudinary_url
+    // This is what we will use in the frontend
     {
-      name: 'alt',
+      name: 'url',
       type: 'text',
-      required: true,
+      hooks: {
+        afterRead: [({ data }) => data?.cloudinary_url || data?.url],
+      },
+      admin: {
+        hidden: true,
+      },
     },
   ],
 }
