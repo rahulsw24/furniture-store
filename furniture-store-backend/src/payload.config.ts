@@ -38,7 +38,11 @@ export default buildConfig({
   cors: [
     'http://localhost:5173', // Vite default
     'http://127.0.0.1:5173',
-    'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app/',
+    'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
+  ],
+  csrf: [
+    'http://localhost:5173',
+    'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
   ],
   sharp,
   endpoints: [
