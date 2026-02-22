@@ -155,7 +155,30 @@ const Checkout = () => {
                     <div className="lg:col-span-5 lg:sticky lg:top-32 space-y-8">
                         <div className="bg-[#F9F9F9] rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-sm">
                             <h2 className="text-xl font-bold uppercase tracking-widest text-gray-900 mb-8 pb-4 border-b border-gray-200">Order Summary</h2>
-
+                            {/* --- ITEM PREVIEW --- */}
+                            <div className="mb-8 space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Your Items ({detailedCart.length})</p>
+                                {detailedCart.map((item) => (
+                                    <div key={item.id} className="flex gap-4 items-center bg-white p-3 rounded-2xl border border-gray-50">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+                                            <img
+                                                src={item.images?.[0]?.url || '/placeholder.png'}
+                                                alt={item.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-[11px] font-bold text-gray-900 uppercase truncate">{item.name}</h4>
+                                            <p className="text-[10px] text-gray-400 font-medium">Qty: {item.quantity}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[11px] font-bold text-gray-900">
+                                                ₹{((item.currentPrice || item.price) * item.quantity).toLocaleString("en-IN")}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                             {/* --- COUPON INPUT & OFFERS TRIGGER --- */}
                             <div className="mb-8 space-y-4">
                                 {appliedCoupon ? (
