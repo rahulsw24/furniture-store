@@ -105,9 +105,15 @@ const Navbar = () => {
 
                 {/* Desktop Menu */}
                 <div className="hidden lg:flex items-center justify-center gap-10 pb-6">
-                    {['Best Sellers', 'Products', 'How it Works', 'Our Story', 'Support'].map((item) => {
+                    {['Best Sellers', 'Products', 'How it Works', 'Our Story', 'Reach Out'].map((item) => {
                         const isProducts = item === 'Products';
                         const isBestSellers = item === 'Best Sellers';
+                        const isReachOut = item === 'Reach Out'; // Added check for Reach Out
+
+                        // Determine the path based on the item name
+                        let targetPath = "#";
+                        if (isProducts) targetPath = "/products";
+                        if (isReachOut) targetPath = "/reach-out";
 
                         return (
                             <div
@@ -116,10 +122,10 @@ const Navbar = () => {
                                 onMouseEnter={() => isBestSellers ? setShowMegaMenu(true) : setShowMegaMenu(false)}
                             >
                                 <Link
-                                    to={isProducts ? "/products" : "#"}
+                                    to={targetPath}
                                     className={`text-[10px] uppercase tracking-[0.2em] font-bold transition-all relative
-                                        ${isBestSellers && showMegaMenu ? 'text-black' : 'text-gray-500 hover:text-black'}
-                                    `}
+                        ${isBestSellers && showMegaMenu ? 'text-black' : 'text-gray-500 hover:text-black'}
+                    `}
                                 >
                                     {item}
                                     <span className={`absolute -bottom-1 left-0 w-0 h-[1.5px] bg-black transition-all duration-300 group-hover:w-full ${isBestSellers && showMegaMenu ? 'w-full' : ''}`}></span>

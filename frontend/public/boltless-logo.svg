@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    /* Default: Black for Light Mode */
+    .bolt-mark { fill: #000000; }
+    
+    /* White for Dark Mode */
+    @media (prefers-color-scheme: dark) {
+      .bolt-mark { fill: #FFFFFF; }
+    }
+  </style>
+  
+  <path class="bolt-mark" d="M25 15H55C68.8 15 80 26.2 80 40C80 47.5 76.7 54.2 71.4 58.8C76.7 63.4 80 70.1 80 77.6C80 91.4 68.8 102.6 55 102.6H25V15ZM40 30V48H55C59.4 48 63 44.4 63 40C63 35.6 59.4 32 55 32H40V30ZM40 60V85H55C59.4 85 63 81.4 63 77C63 72.6 59.4 69 55 69H40V60Z" transform="translate(0, -10) scale(1.1)"/>
+  
+  <rect class="bolt-mark" x="25" y="45" width="15" height="10" />
+</svg>
