@@ -21,14 +21,25 @@ const Navbar = () => {
     const controlNavbar = () => {
         if (typeof window !== 'undefined') {
             const currentScrollY = window.scrollY;
+            const scrollDiff = Math.abs(currentScrollY - lastScrollY);
+            const scrollThreshold = 20; // Increase this number to make it even LESS sensitive
+
+            // 1. Handle background styling (Blur/Shadow)
             setIsScrolled(currentScrollY > 40);
 
+            // 2. Hide/Show logic with tolerance
             if (currentScrollY > lastScrollY && currentScrollY > 200) {
+                // Scrolling Down - Hide
                 setIsVisible(false);
                 setShowMegaMenu(false);
-            } else {
+            } else if (currentScrollY < lastScrollY && scrollDiff > scrollThreshold) {
+                // Scrolling Up - Show ONLY if we've scrolled up more than the threshold
+                setIsVisible(true);
+            } else if (currentScrollY <= 0) {
+                // Always show at the very top
                 setIsVisible(true);
             }
+
             setLastScrollY(currentScrollY);
         }
     };

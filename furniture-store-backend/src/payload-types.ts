@@ -73,6 +73,7 @@ export interface Config {
     products: Product;
     orders: Order;
     coupons: Coupon;
+    inquiries: Inquiry;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     coupons: CouponsSelect<false> | CouponsSelect<true>;
+    inquiries: InquiriesSelect<false> | InquiriesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -208,7 +210,18 @@ export interface Product {
   id: number;
   name: string;
   slug: string;
+  /**
+   * Use --- to separate story sections. First line is the title.
+   */
   description: string;
+  /**
+   * One dimension per line.
+   */
+  dimensions?: string | null;
+  /**
+   * One material per line.
+   */
+  materials?: string | null;
   price: number;
   compare_price?: number | null;
   images: (number | Media)[];
@@ -295,6 +308,18 @@ export interface Coupon {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inquiries".
+ */
+export interface Inquiry {
+  id: number;
+  name: string;
+  email: string;
+  message: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -340,6 +365,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'coupons';
         value: number | Coupon;
+      } | null)
+    | ({
+        relationTo: 'inquiries';
+        value: number | Inquiry;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -464,6 +493,8 @@ export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   description?: T;
+  dimensions?: T;
+  materials?: T;
   price?: T;
   compare_price?: T;
   images?: T;
@@ -549,6 +580,17 @@ export interface CouponsSelect<T extends boolean = true> {
   used_count?: T;
   expires_at?: T;
   is_active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inquiries_select".
+ */
+export interface InquiriesSelect<T extends boolean = true> {
+  name?: T;
+  email?: T;
+  message?: T;
   updatedAt?: T;
   createdAt?: T;
 }

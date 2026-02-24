@@ -69,9 +69,9 @@ function App() {
             <Route
               path="/checkout"
               element={
-                <ProtectedRoute>
-                  <Checkout />
-                </ProtectedRoute>
+
+                <Checkout />
+
               }
             />
 

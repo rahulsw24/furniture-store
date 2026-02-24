@@ -1,9 +1,12 @@
 import React from "react"
 import { useParams, Link } from "react-router-dom"
-import { CheckCircle, ShoppingBag, ArrowRight, Package, Calendar, Mail } from "lucide-react"
+import { CheckCircle, ShoppingBag, ArrowRight, Package, Calendar, Mail, UserPlus } from "lucide-react"
+import { useAuth } from "../context/AuthContext" // 1. Import useAuth
 
 const OrderSuccess = () => {
     const { id } = useParams()
+    const { user } = useAuth() // 2. Get user state
+
     const today = new Date().toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
@@ -27,7 +30,7 @@ const OrderSuccess = () => {
             </div>
 
             {/* --- RECEIPT CARD --- */}
-            <div className="w-full max-w-[500px] bg-[#F9F9F9] rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-sm mb-12">
+            <div className="w-full max-w-[500px] bg-[#F9F9F9] rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-sm mb-8">
                 <div className="space-y-8">
                     <div className="flex items-start gap-5">
                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-gray-400 flex-shrink-0">
@@ -61,13 +64,19 @@ const OrderSuccess = () => {
                         </div>
                     </div>
                 </div>
-
-                <div className="mt-12 pt-8 border-t border-gray-200">
-                    <p className="text-center text-[11px] text-gray-400 italic">
-                        Questions about your order? <Link to="/reach-out" className="text-black font-bold underline underline-offset-4 decoration-gray-200 hover:decoration-black">Reach out</Link>
-                    </p>
-                </div>
             </div>
+
+            {/* --- GUEST ACCOUNT NUDGE --- */}
+            {!user && (
+                <div className="w-full max-w-[500px] mb-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    <div className="bg-black/5 rounded-3xl p-6 border border-dashed border-gray-200">
+                        <h4 className="text-[11px] font-bold uppercase tracking-widest text-gray-900 mb-2">Want to track this order?</h4>
+                        <p className="text-xs text-gray-500 leading-relaxed">
+                            Create a <span className="text-black font-bold">BOLTLESS</span> account in seconds to save your shipping details and view your full order history.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* --- ACTION BUTTONS --- */}
             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-[500px]">
@@ -79,13 +88,23 @@ const OrderSuccess = () => {
                     <ShoppingBag size={14} />
                 </Link>
 
-                <Link
-                    to="/account"
-                    className="flex-1 bg-white border border-gray-200 text-black py-5 rounded-full text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:border-black transition-all transform active:scale-[0.98]"
-                >
-                    View Account
-                    <ArrowRight size={14} />
-                </Link>
+                {user ? (
+                    <Link
+                        to="/account"
+                        className="flex-1 bg-white border border-gray-200 text-black py-5 rounded-full text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:border-black transition-all transform active:scale-[0.98]"
+                    >
+                        View Account
+                        <ArrowRight size={14} />
+                    </Link>
+                ) : (
+                    <Link
+                        to="/signup"
+                        className="flex-1 bg-[#F3F3F1] text-black py-5 rounded-full text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black hover:text-white transition-all transform active:scale-[0.98]"
+                    >
+                        Create Account
+                        <UserPlus size={14} />
+                    </Link>
+                )}
             </div>
         </div>
     )

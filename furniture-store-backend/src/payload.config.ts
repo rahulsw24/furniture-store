@@ -13,10 +13,13 @@ import { Orders } from './collections/Orders'
 import { Coupons } from './collections/Coupons'
 import { createOrder } from './api/create-order'
 import { validateCoupon } from './api/validate-coupon'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
+import { Inquiries } from './collections/Inquiries'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+console.log('DEBUG: Current Secret:', process.env.PAYLOAD_SECRET ? 'LOADED' : 'MISSING')
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -24,7 +27,19 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Categories, Products, Orders, Coupons],
+  email: nodemailerAdapter({
+    defaultFromAddress: 'contentrs2407@gmail.com',
+    defaultFromName: 'BoltLess Furniture Store',
+    transportOptions: {
+      host: 'smtp-relay.brevo.com',
+      port: 587,
+      auth: {
+        user: 'a33d3b001@smtp-brevo.com',
+        pass: 'bdT4jt2BAYJ95DQ0', // Tip: Move this to process.env.SMTP_PASS for security!
+      },
+    },
+  }),
+  collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -36,12 +51,14 @@ export default buildConfig({
     },
   }),
   cors: [
+    'http://localhost:3000',
     'http://localhost:5173', // Vite default
     'http://127.0.0.1:5173',
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
     'https://furniture-store-pi-drab.vercel.app',
   ],
   csrf: [
+    'http://localhost:3000',
     'http://localhost:5173',
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
     'https://furniture-store-pi-drab.vercel.app',

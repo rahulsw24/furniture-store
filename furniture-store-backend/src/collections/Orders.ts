@@ -1,10 +1,127 @@
 import type { CollectionConfig } from 'payload'
+function generateAdminOrderEmailHtml(doc: any) {
+  const itemsList = doc.items
+    .map(
+      (item: any) =>
+        `<li>${item.product_name} (x${item.quantity}) - ₹${item.subtotal.toLocaleString('en-IN')}</li>`,
+    )
+    .join('')
+
+  return `
+    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #000; border-radius: 12px; color: #000;">
+      <h2 style="text-transform: uppercase; letter-spacing: 2px;">New Order Alert</h2>
+      <p>Order <strong>#${doc.order_number}</strong> was just placed.</p>
+      
+      <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="margin-top: 0; font-size: 14px; text-transform: uppercase;">Customer Details</h3>
+        <p style="margin: 5px 0;"><strong>Name:</strong> ${doc.shipping_address?.full_name}</p>
+        <p style="margin: 5px 0;"><strong>Email:</strong> ${doc.customer_email}</p>
+        <p style="margin: 5px 0;"><strong>Phone:</strong> ${doc.customer_phone || doc.shipping_address?.phone}</p>
+        <p style="margin: 5px 0;"><strong>Payment:</strong> ${doc.payment_method.toUpperCase()}</p>
+      </div>
+
+      <h3 style="font-size: 14px; text-transform: uppercase;">Items Ordered</h3>
+      <ul style="padding-left: 20px;">
+        ${itemsList}
+      </ul>
+
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+      <p style="font-size: 18px;"><strong>Total Revenue: ₹${doc.total.toLocaleString('en-IN')}</strong></p>
+      
+      <a href="https://your-admin-panel-url.com/admin/collections/orders/${doc.id}" 
+         style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 50px; font-size: 12px; font-weight: bold;">
+         VIEW IN ADMIN PANEL
+      </a>
+    </div>
+  `
+}
+function generateOrderEmailHtml(doc: any, message: string) {
+  const itemsHtml = doc.items
+    .map(
+      (item: any) => `
+    <tr>
+      <td style="padding: 15px 0; border-bottom: 1px solid #f0f0f0;">
+        <span style="font-size: 14px; font-weight: 700; color: #000;">${item.product_name}</span><br/>
+        <span style="font-size: 12px; color: #999;">Qty: ${item.quantity}</span>
+      </td>
+      <td align="right" style="padding: 15px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; font-weight: 700;">
+        ₹${item.subtotal.toLocaleString('en-IN')}
+      </td>
+    </tr>
+  `,
+    )
+    .join('')
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <body style="margin: 0; padding: 0; background-color: #fff; font-family: 'Helvetica', Arial, sans-serif;">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td align="center" style="padding: 40px 20px;">
+            <table width="600" style="max-width: 600px; width: 100%; border: 1px solid #f0f0f0; padding: 40px; border-radius: 20px;">
+              <tr>
+                <td align="center" style="padding-bottom: 30px;">
+                  <div style="font-size: 24px; letter-spacing: 5px; font-weight: bold; color: #000;">BOLTLESS</div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <h1 style="font-size: 22px; margin-bottom: 10px; color: #000;">Order Update</h1>
+                  <p style="font-size: 15px; color: #555; line-height: 1.6;">${message}</p>
+                  
+                  <div style="margin-top: 40px; padding: 20px; background-color: #F9F9F9; border-radius: 12px;">
+                    <span style="font-size: 11px; font-weight: bold; color: #999; text-transform: uppercase; letter-spacing: 1px;">Order Number</span><br/>
+                    <span style="font-size: 16px; font-weight: bold; color: #000;">#${doc.order_number}</span>
+                  </div>
+
+                  <table width="100%" style="margin-top: 30px; border-collapse: collapse;">
+                    ${itemsHtml}
+                    <tr>
+                      <td style="padding: 20px 0 5px 0; font-size: 14px; color: #999;">Subtotal</td>
+                      <td align="right" style="padding: 20px 0 5px 0; font-size: 14px; color: #000;">₹${doc.subtotal.toLocaleString('en-IN')}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 5px 0; font-size: 14px; color: #999;">Shipping</td>
+                      <td align="right" style="padding: 5px 0; font-size: 14px; color: #000;">₹${doc.shipping_cost.toLocaleString('en-IN')}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 15px 0; font-size: 18px; font-weight: bold; color: #000; border-top: 2px solid #000;">Total</td>
+                      <td align="right" style="padding: 15px 0; font-size: 18px; font-weight: bold; color: #000; border-top: 2px solid #000;">₹${doc.total.toLocaleString('en-IN')}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding-top: 40px;">
+                  <p style="font-size: 12px; color: #aaa;">© 2026 BoltLess Furniture Store. All rights reserved.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `
+}
 
 export const Orders: CollectionConfig = {
   slug: 'orders',
   access: {
+    // Anyone can create an order (Checkout process)
     create: () => true,
-    read: ({ req }) => !!req.user, // users can read their orders
+
+    // Read access: Admins see everything, Customers only see their own
+    read: ({ req: { user } }) => {
+      if (user?.role === 'admin') return true
+      if (user?.id) return { user: { equals: user.id } }
+      return false // Guests can't read orders via API without a session
+    },
+
+    // Only Admins can update (change status, add tracking) or delete
+    update: ({ req: { user } }) => user?.role === 'admin',
+    delete: ({ req: { user } }) => user?.role === 'admin',
   },
 
   admin: {
@@ -16,6 +133,92 @@ export const Orders: CollectionConfig = {
       'payment_status',
       'order_status',
       'createdAt',
+    ],
+  },
+  hooks: {
+    beforeChange: [
+      async ({ data, operation, req }) => {
+        if (operation === 'create' && !data.order_number) {
+          const year = new Date().getFullYear()
+          // Payload 3.0 uses totalDocs
+          const count = await req.payload.count({
+            collection: 'orders',
+          })
+          data.order_number = `BLT-${year}-${(count.totalDocs + 1).toString().padStart(4, '0')}`
+        }
+      },
+    ],
+    afterChange: [
+      async ({ doc, previousDoc, operation, req }) => {
+        const { payload } = req
+        const recipient = doc.customer_email
+        const admin = 'contentrs2407@gmail.com'
+
+        // ------------------------------------------------------
+        // CASE 1: NEW ORDER CREATION
+        // ------------------------------------------------------
+        if (operation === 'create') {
+          await payload.sendEmail({
+            to: recipient,
+            subject: `Order Confirmed - #${doc.order_number}`,
+            html: generateOrderEmailHtml(
+              doc,
+              "Thank you for your order. We've received it and are getting things ready.",
+            ),
+          })
+
+          // 2. Send Notification to ADMIN
+          await payload.sendEmail({
+            to: 'contentrs2407@boltless.in', // Your admin email
+            subject: `NEW ORDER RECEIVED - #${doc.order_number}`,
+            html: generateAdminOrderEmailHtml(doc),
+          })
+          return // Exit here so we don't send a second "Status is Pending" email
+        }
+
+        // ------------------------------------------------------
+        // CASE 2: STATUS UPDATES
+        // ------------------------------------------------------
+        const statusChanged = doc.order_status !== previousDoc?.order_status
+
+        if (operation === 'update' && statusChanged) {
+          let statusMessage = ''
+          let subject = `Update on Order #${doc.order_number}`
+
+          switch (doc.order_status) {
+            case 'confirmed':
+              statusMessage = 'Your order has been confirmed and is officially in our system.'
+              break
+            case 'processing':
+              statusMessage = "Our craftsmen are now working on your pieces. We're on it!"
+              break
+            case 'shipped':
+              subject = `Your BoltLess order has shipped! 🚚`
+              statusMessage = `Great news! Your order is on the way. ${doc.tracking?.tracking_number ? `Tracking: ${doc.tracking.tracking_number}` : ''}`
+              break
+            case 'out_for_delivery':
+              statusMessage = 'Your furniture is out for delivery and should arrive later today.'
+              break
+            case 'delivered':
+              subject = `Delivered: Order #${doc.order_number}`
+              statusMessage =
+                'Your order has been delivered. We hope you love your new simplified space!'
+              break
+            case 'cancelled':
+              statusMessage =
+                'Your order has been cancelled. If this was a mistake, please contact us.'
+              break
+            default:
+              statusMessage = `The status of your order has changed to: ${doc.order_status}.`
+          }
+
+          await payload.sendEmail({
+            to: recipient,
+            subject: subject,
+            html: generateOrderEmailHtml(doc, statusMessage),
+          })
+        }
+      },
     ],
   },
 
