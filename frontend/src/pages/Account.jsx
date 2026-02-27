@@ -1,10 +1,23 @@
-import React from "react"
+import React, { useState } from "react" // Added useState
 import { useAuth } from "../context/AuthContext"
 import { Link } from "react-router-dom"
-import { Package, MapPin, LogOut, User as UserIcon, ChevronRight } from "lucide-react"
+import { Package, MapPin, LogOut, User as UserIcon, ChevronRight, Loader2 } from "lucide-react" // Added Loader2
 
 const Account = () => {
     const { user, logout } = useAuth()
+    const [isLoggingOut, setIsLoggingOut] = useState(false) // New state
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true)
+        try {
+            await logout()
+            // The AuthContext usually handles redirection, but we keep the loader 
+            // active until the component unmounts.
+        } catch (err) {
+            console.error("Logout failed", err)
+            setIsLoggingOut(false)
+        }
+    }
 
     return (
         <div className="bg-white min-h-[85vh]">
@@ -54,15 +67,23 @@ const Account = () => {
 
                         {/* --- LOGOUT AS A DISTINCT ACTION --- */}
                         <button
-                            onClick={logout}
-                            className="group p-8 rounded-[2rem] border border-gray-100 hover:border-red-100 hover:bg-red-50/30 text-left transition-all flex flex-col justify-between min-h-[200px]"
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            className={`group p-8 rounded-[2rem] border border-gray-100 text-left transition-all flex flex-col justify-between min-h-[200px] ${isLoggingOut ? 'bg-gray-50 cursor-not-allowed' : 'hover:border-red-100 hover:bg-red-50/30'
+                                }`}
                         >
-                            <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-white group-hover:text-red-500 transition-all">
-                                <LogOut size={24} />
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isLoggingOut ? 'bg-white text-gray-400' : 'bg-gray-50 text-gray-400 group-hover:bg-white group-hover:text-red-500'
+                                }`}>
+                                {isLoggingOut ? <Loader2 size={24} className="animate-spin" /> : <LogOut size={24} />}
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors">Logout</h3>
-                                <p className="text-sm text-gray-500 leading-relaxed">Sign out of your current session</p>
+                                <h3 className={`text-lg font-bold mb-2 transition-colors ${isLoggingOut ? 'text-gray-400' : 'text-gray-900 group-hover:text-red-600'
+                                    }`}>
+                                    {isLoggingOut ? "Signing out..." : "Logout"}
+                                </h3>
+                                <p className="text-sm text-gray-500 leading-relaxed">
+                                    {isLoggingOut ? "Ending your session safely" : "Sign out of your current session"}
+                                </p>
                             </div>
                         </button>
 

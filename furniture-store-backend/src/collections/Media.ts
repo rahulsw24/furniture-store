@@ -4,10 +4,19 @@ import type { CollectionConfig } from 'payload'
 export const Media: CollectionConfig = {
   slug: 'media',
   access: {
+    // Public needs to see images on the website
     read: () => true,
-    create: () => true,
-    update: () => true,
-    delete: () => true,
+
+    // Only Admins can upload, edit, or remove brand assets
+    create: ({ req: { user } }) => {
+      // Debugging: This will show up in your terminal logs
+      console.log('DEBUG: Creating Category. User Role:', user?.role)
+
+      if (user?.role === 'admin') return true
+      return false
+    },
+    update: ({ req: { user } }) => user?.role === 'admin',
+    delete: ({ req: { user } }) => user?.role === 'admin',
   },
   upload: {
     staticDir: 'media',

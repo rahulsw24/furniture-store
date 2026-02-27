@@ -7,10 +7,10 @@ export const Coupons: CollectionConfig = {
     useAsTitle: 'code',
   },
   access: {
-    // Allows anyone to see the list of active coupons on the Checkout page
+    // Allows the frontend/checkout to check if a coupon exists and is valid
     read: () => true,
 
-    // Keep these restricted to Admins only
+    // Strictly restricted to Admins now that your role is fixed
     create: ({ req: { user } }) => user?.role === 'admin',
     update: ({ req: { user } }) => user?.role === 'admin',
     delete: ({ req: { user } }) => user?.role === 'admin',

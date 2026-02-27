@@ -1,16 +1,17 @@
-import React from "react"
+import React, { useState } from "react" // 1. Added useState
 import { useForm } from "react-hook-form"
 import { useNavigate, Link } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
-import { User, Mail, Phone, Lock, ArrowRight } from "lucide-react"
+import { User, Mail, Phone, Lock, ArrowRight, Loader2 } from "lucide-react" // 2. Added Loader2 icon
 
 const Signup = () => {
-    const { register, handleSubmit } = useForm()
+    const { register, handleSubmit, formState: { isSubmitting } } = useForm() // 3. Destructured isSubmitting
     const { signup } = useAuth()
     const navigate = useNavigate()
 
     const onSubmit = async data => {
         try {
+            // isSubmitting automatically becomes true when this starts
             const success = await signup(data)
             if (success) {
                 navigate("/")
@@ -23,7 +24,6 @@ const Signup = () => {
     return (
         <div className="min-h-[85vh] flex items-center justify-center px-6 py-20 bg-white">
             <div className="w-full max-w-[440px]">
-
                 <div className="text-center mb-12">
                     <h1 className="text-4xl md:text-5xl font-serif text-gray-900 mb-4">
                         Create account
@@ -34,26 +34,38 @@ const Signup = () => {
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-
                     <InputGroup label="Full Name" icon={<User size={18} />}>
-                        <input {...register("name")} placeholder="Rahul Swarup" className="pill-input" required />
+                        <input {...register("name")} placeholder="Rahul Swarup" required />
                     </InputGroup>
 
                     <InputGroup label="Email Address" icon={<Mail size={18} />}>
-                        <input {...register("email")} type="email" placeholder="rahul@example.com" className="pill-input" required />
+                        <input {...register("email")} type="email" placeholder="rahul@example.com" required />
                     </InputGroup>
 
                     <InputGroup label="Phone Number" icon={<Phone size={18} />}>
-                        <input {...register("phone")} placeholder="+91 ..." className="pill-input" />
+                        <input {...register("phone")} placeholder="+91 ..." />
                     </InputGroup>
 
                     <InputGroup label="Password" icon={<Lock size={18} />}>
-                        <input {...register("password")} type="password" placeholder="••••••••" className="pill-input" required />
+                        <input {...register("password")} type="password" placeholder="••••••••" required />
                     </InputGroup>
 
-                    <button type="submit" className="group w-full bg-black text-white py-5 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] hover:bg-gray-800 transition-all flex items-center justify-center gap-3 mt-8 shadow-xl shadow-black/5">
-                        Create Account
-                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    <button
+                        type="submit"
+                        disabled={isSubmitting} // 4. Disable button while loading
+                        className={`group w-full bg-black text-white py-5 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 mt-8 shadow-xl shadow-black/5 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-800'
+                            }`}
+                    >
+                        {isSubmitting ? (
+                            <>
+                                PROCESSING <Loader2 size={14} className="animate-spin" />
+                            </>
+                        ) : (
+                            <>
+                                Create Account
+                                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                            </>
+                        )}
                     </button>
                 </form>
 
@@ -70,7 +82,6 @@ const Signup = () => {
     )
 }
 
-// Small helper for the clean "Pill" look
 const InputGroup = ({ label, icon, children }) => (
     <div className="space-y-2">
         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-900 ml-5">{label}</label>

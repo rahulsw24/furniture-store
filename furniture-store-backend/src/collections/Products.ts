@@ -3,7 +3,11 @@ import type { CollectionConfig } from 'payload'
 export const Products: CollectionConfig = {
   slug: 'products',
   access: {
-    read: () => true, // 🔥 allow public read
+    read: () => true, // Public can view
+    // Only admins can modify
+    create: ({ req: { user } }) => user?.role === 'admin',
+    update: ({ req: { user } }) => user?.role === 'admin',
+    delete: ({ req: { user } }) => user?.role === 'admin',
   },
   admin: {
     useAsTitle: 'name',
@@ -24,6 +28,31 @@ export const Products: CollectionConfig = {
       name: 'description',
       type: 'textarea',
       required: true,
+      admin: {
+        description: 'Use --- to separate story sections. First line is the title.',
+      },
+    },
+    // --- NEW TECHNICAL DETAILS GROUP ---
+    {
+      type: 'row', // Put these side-by-side in the CMS UI
+      fields: [
+        {
+          name: 'dimensions',
+          type: 'textarea',
+          admin: {
+            placeholder: 'Width: 48"\nDepth: 24"\nHeight: 18"',
+            description: 'One dimension per line.',
+          },
+        },
+        {
+          name: 'materials',
+          type: 'textarea',
+          admin: {
+            placeholder: 'Premium Birch Plywood\nNatural Wax Finish',
+            description: 'One material per line.',
+          },
+        },
+      ],
     },
 
     {

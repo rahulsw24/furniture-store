@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.76.1",
+    "@payloadcms/email-nodemailer": "3.76.1",
     "@payloadcms/next": "3.76.1",
     "@payloadcms/richtext-lexical": "3.76.1",
     "@payloadcms/ui": "3.76.1",
@@ -32,6 +33,7 @@
     "jspdf-autotable": "^5.0.7",
     "multer": "^2.0.2",
     "next": "15.4.11",
+    "nodemailer": "^8.0.1",
     "payload": "3.76.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",

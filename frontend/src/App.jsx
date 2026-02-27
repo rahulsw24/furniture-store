@@ -8,6 +8,7 @@ import Signup from "./pages/SignUp"
 
 import ProtectedRoute from "./components/ProtectedRoute"
 import Navbar from './components/layout/Navbar';
+
 import Footer from './components/layout/Footer';
 import Home from './pages/Home';
 import ProductListing from './pages/ProductListing'; // Import your new listing page
@@ -21,6 +22,7 @@ import OrderSuccess from './pages/OrderSuccess';
 import OrderDetails from './pages/Order/OrderDetails';
 import Addresses from './pages/Addresses';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import OurStory from './pages/OurStory';
 
 
 
@@ -38,6 +40,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+
+            <Route path="/our-story" element={<OurStory />} />
 
             <Route
               path="/orders"
@@ -69,9 +73,9 @@ function App() {
             <Route
               path="/checkout"
               element={
-                <ProtectedRoute>
-                  <Checkout />
-                </ProtectedRoute>
+
+                <Checkout />
+
               }
             />
 

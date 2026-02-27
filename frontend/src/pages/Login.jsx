@@ -1,8 +1,8 @@
-import React from "react"
+import React, { useState } from "react" // Added useState
 import { useForm } from "react-hook-form"
 import { useNavigate, Link, useLocation } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
-import { Mail, Lock, ArrowRight } from "lucide-react"
+import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react" // Added Loader2
 
 const Login = () => {
     const { register, handleSubmit } = useForm()
@@ -10,14 +10,25 @@ const Login = () => {
     const navigate = useNavigate()
     const location = useLocation()
 
+    // 1. Add loading state
+    const [isLoading, setIsLoading] = useState(false)
+
     const redirectTo = location.state?.from || "/"
 
     const onSubmit = async data => {
-        const success = await login(data.email, data.password)
-        if (success) {
-            navigate(redirectTo, { replace: true })
-        } else {
-            alert("Invalid credentials")
+        setIsLoading(true) // Start loading
+        try {
+            const success = await login(data.email, data.password)
+            if (success) {
+                navigate(redirectTo, { replace: true })
+            } else {
+                alert("Invalid credentials")
+                setIsLoading(false) // Stop loading only if it fails
+            }
+        } catch (error) {
+            console.error(error)
+            alert("An error occurred during sign in")
+            setIsLoading(false)
         }
     }
 
@@ -47,8 +58,9 @@ const Login = () => {
                                 {...register("email")}
                                 type="email"
                                 placeholder="email@example.com"
-                                className="w-full px-6 py-5 rounded-2xl border border-gray-100 bg-[#F9F9F9] text-sm focus:outline-none focus:border-black transition-all placeholder:text-gray-300"
+                                className="w-full px-6 py-5 rounded-2xl border border-gray-100 bg-[#F9F9F9] text-sm focus:outline-none focus:border-black transition-all placeholder:text-gray-300 disabled:opacity-50"
                                 required
+                                disabled={isLoading} // Disable input while loading
                             />
                             <Mail className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                         </div>
@@ -68,8 +80,9 @@ const Login = () => {
                                 {...register("password")}
                                 type="password"
                                 placeholder="••••••••"
-                                className="w-full px-6 py-5 rounded-2xl border border-gray-100 bg-[#F9F9F9] text-sm focus:outline-none focus:border-black transition-all placeholder:text-gray-300"
+                                className="w-full px-6 py-5 rounded-2xl border border-gray-100 bg-[#F9F9F9] text-sm focus:outline-none focus:border-black transition-all placeholder:text-gray-300 disabled:opacity-50"
                                 required
+                                disabled={isLoading} // Disable input while loading
                             />
                             <Lock className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                         </div>
@@ -77,10 +90,20 @@ const Login = () => {
 
                     <button
                         type="submit"
-                        className="group w-full bg-black text-white py-5 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] hover:bg-gray-800 transition-all flex items-center justify-center gap-3 transform active:scale-[0.98] shadow-xl shadow-black/5 mt-8"
+                        disabled={isLoading} // 2. Disable button while loading
+                        className={`group w-full bg-black text-white py-5 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 transform active:scale-[0.98] shadow-xl shadow-black/5 mt-8 ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-800'}`}
                     >
-                        Sign In
-                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        {isLoading ? (
+                            <>
+                                <Loader2 size={14} className="animate-spin" />
+                                <span>Authenticating...</span>
+                            </>
+                        ) : (
+                            <>
+                                Sign In
+                                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                            </>
+                        )}
                     </button>
 
                 </form>
