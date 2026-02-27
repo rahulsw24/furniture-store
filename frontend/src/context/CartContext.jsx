@@ -135,7 +135,8 @@ export const CartProvider = ({ children }) => {
 
     const discount = coupon ? subtotal * coupon.discount : 0
 
-    const shipping = subtotal > 5000 ? 0 : 299
+    // Updated to 0 as shipping is included in product price
+    const shipping = 0
 
     const totalPrice = subtotal - discount + shipping
 

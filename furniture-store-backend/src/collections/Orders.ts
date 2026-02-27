@@ -1,4 +1,7 @@
+import { generateInvoicePDF } from '@/utils/generateInvoice'
 import type { CollectionConfig } from 'payload'
+
+// Helper to handle the Admin Email HTML
 function generateAdminOrderEmailHtml(doc: any) {
   const itemsList = doc.items
     .map(
@@ -35,6 +38,8 @@ function generateAdminOrderEmailHtml(doc: any) {
     </div>
   `
 }
+
+// Helper to handle the Customer Email HTML
 function generateOrderEmailHtml(doc: any, message: string) {
   const itemsHtml = doc.items
     .map(
@@ -109,21 +114,15 @@ function generateOrderEmailHtml(doc: any, message: string) {
 export const Orders: CollectionConfig = {
   slug: 'orders',
   access: {
-    // Anyone can create an order (Checkout process)
     create: () => true,
-
-    // Read access: Admins see everything, Customers only see their own
     read: ({ req: { user } }) => {
       if (user?.role === 'admin') return true
       if (user?.id) return { user: { equals: user.id } }
-      return false // Guests can't read orders via API without a session
+      return false
     },
-
-    // Only Admins can update (change status, add tracking) or delete
     update: ({ req: { user } }) => user?.role === 'admin',
     delete: ({ req: { user } }) => user?.role === 'admin',
   },
-
   admin: {
     useAsTitle: 'order_number',
     defaultColumns: [
@@ -140,7 +139,6 @@ export const Orders: CollectionConfig = {
       async ({ data, operation, req }) => {
         if (operation === 'create' && !data.order_number) {
           const year = new Date().getFullYear()
-          // Payload 3.0 uses totalDocs
           const count = await req.payload.count({
             collection: 'orders',
           })
@@ -152,28 +150,51 @@ export const Orders: CollectionConfig = {
       async ({ doc, previousDoc, operation, req }) => {
         const { payload } = req
         const recipient = doc.customer_email
-        const admin = 'contentrs2407@gmail.com'
 
-        // ------------------------------------------------------
-        // CASE 1: NEW ORDER CREATION
-        // ------------------------------------------------------
         if (operation === 'create') {
-          await payload.sendEmail({
-            to: recipient,
-            subject: `Order Confirmed - #${doc.order_number}`,
-            html: generateOrderEmailHtml(
-              doc,
-              "Thank you for your order. We've received it and are getting things ready.",
-            ),
-          })
+          try {
+            // 1. We cast payload to 'any' to stop the 'never' type inference on findGlobal
+            const settings = await (payload as any).findGlobal({
+              slug: 'business-settings',
+            })
 
-          // 2. Send Notification to ADMIN
-          await payload.sendEmail({
-            to: 'contentrs2407@boltless.in', // Your admin email
-            subject: `NEW ORDER RECEIVED - #${doc.order_number}`,
-            html: generateAdminOrderEmailHtml(doc),
-          })
-          return // Exit here so we don't send a second "Status is Pending" email
+            // 2. Generate Invoice Buffer
+            const invoiceBuffer = await generateInvoicePDF(doc, settings)
+
+            const emailAttachments = [
+              {
+                filename: `Invoice-${doc.order_number}.pdf`,
+                content: invoiceBuffer,
+              },
+            ]
+
+            // 3. Send to CUSTOMER
+            await payload.sendEmail({
+              to: recipient,
+              subject: `Order Confirmed - #${doc.order_number}`,
+              attachments: emailAttachments,
+              html: generateOrderEmailHtml(
+                doc,
+                'Thank you for your order. Your invoice is attached.',
+              ),
+            })
+
+            // 4. Send to ADMIN
+            await payload.sendEmail({
+              to: 'contentrs2407@gmail.com',
+              subject: `🚨 NEW ORDER - #${doc.order_number}`,
+              attachments: emailAttachments,
+              html: generateAdminOrderEmailHtml(doc),
+            })
+          } catch (error) {
+            // Standard Payload logger check
+            if (payload.logger) {
+              payload.logger.error(`Error sending creation emails: ${error}`)
+            } else {
+              console.error(`Error sending creation emails:`, error)
+            }
+          }
+          return
         }
 
         // ------------------------------------------------------
@@ -194,7 +215,9 @@ export const Orders: CollectionConfig = {
               break
             case 'shipped':
               subject = `Your BoltLess order has shipped! 🚚`
-              statusMessage = `Great news! Your order is on the way. ${doc.tracking?.tracking_number ? `Tracking: ${doc.tracking.tracking_number}` : ''}`
+              statusMessage = `Great news! Your order is on the way. ${
+                doc.tracking?.tracking_number ? `Tracking: ${doc.tracking.tracking_number}` : ''
+              }`
               break
             case 'out_for_delivery':
               statusMessage = 'Your furniture is out for delivery and should arrive later today.'
@@ -221,41 +244,29 @@ export const Orders: CollectionConfig = {
       },
     ],
   },
-
-  timestamps: true, // adds createdAt + updatedAt automatically
-
+  timestamps: true,
   fields: [
-    /* ================= USER ================= */
-
     {
       name: 'user',
       type: 'relationship',
       relationTo: 'users',
-      required: false, // allow guest checkout later
+      required: false,
     },
-
     {
       name: 'customer_email',
       type: 'email',
       required: true,
     },
-
     {
       name: 'customer_phone',
       type: 'text',
     },
-
-    /* ================= ORDER ID ================= */
-
     {
       name: 'order_number',
       type: 'text',
       unique: true,
       admin: { position: 'sidebar' },
     },
-
-    /* ================= ITEMS ================= */
-
     {
       name: 'items',
       type: 'array',
@@ -267,32 +278,26 @@ export const Orders: CollectionConfig = {
           relationTo: 'products',
           required: true,
         },
-
-        // Snapshot fields (VERY IMPORTANT)
         {
           name: 'product_name',
           type: 'text',
           required: true,
         },
-
         {
           name: 'product_image',
           type: 'text',
         },
-
         {
           name: 'quantity',
           type: 'number',
           required: true,
           min: 1,
         },
-
         {
           name: 'unit_price',
           type: 'number',
           required: true,
         },
-
         {
           name: 'subtotal',
           type: 'number',
@@ -300,62 +305,48 @@ export const Orders: CollectionConfig = {
         },
       ],
     },
-
-    /* ================= PRICING ================= */
-
     {
       name: 'subtotal',
       type: 'number',
       required: true,
     },
-
     {
       name: 'shipping_cost',
       type: 'number',
       defaultValue: 0,
     },
-
     {
       name: 'tax',
       type: 'number',
       defaultValue: 0,
     },
-
     {
       name: 'discount',
       type: 'number',
       defaultValue: 0,
     },
-
     {
       name: 'total',
       type: 'number',
       required: true,
     },
-
     {
       name: 'currency',
       type: 'text',
       defaultValue: 'INR',
     },
-
-    /* ================= PAYMENT ================= */
-
     {
       name: 'payment_method',
       type: 'select',
       options: ['razorpay', 'cod', 'card', 'upi'],
       defaultValue: 'razorpay',
     },
-
     {
       name: 'payment_status',
       type: 'select',
       options: ['pending', 'paid', 'failed', 'refunded'],
       defaultValue: 'pending',
     },
-
-    // Razorpay metadata
     {
       name: 'payment_details',
       type: 'group',
@@ -365,9 +356,6 @@ export const Orders: CollectionConfig = {
         { name: 'razorpay_signature', type: 'text' },
       ],
     },
-
-    /* ================= ORDER STATUS ================= */
-
     {
       name: 'order_status',
       type: 'select',
@@ -381,11 +369,8 @@ export const Orders: CollectionConfig = {
         { label: 'Cancelled', value: 'cancelled' },
         { label: 'Returned', value: 'returned' },
       ],
-      defaultValue: 'pending', // Make sure this is lowercase too!
+      defaultValue: 'pending',
     },
-
-    /* ================= SHIPPING ================= */
-
     {
       name: 'shipping_address',
       type: 'group',
@@ -400,7 +385,6 @@ export const Orders: CollectionConfig = {
         { name: 'country', type: 'text', defaultValue: 'India' },
       ],
     },
-
     {
       name: 'tracking',
       type: 'group',
@@ -410,25 +394,19 @@ export const Orders: CollectionConfig = {
         { name: 'tracking_url', type: 'text' },
       ],
     },
-
-    /* ================= NOTES ================= */
-
     {
       name: 'customer_note',
       type: 'textarea',
     },
-
     {
       name: 'admin_note',
       type: 'textarea',
       admin: { position: 'sidebar' },
     },
-
     {
       name: 'paid_at',
       type: 'date',
     },
-
     {
       name: 'delivered_at',
       type: 'date',

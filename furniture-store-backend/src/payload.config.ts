@@ -15,6 +15,7 @@ import { createOrder } from './api/create-order'
 import { validateCoupon } from './api/validate-coupon'
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { Inquiries } from './collections/Inquiries'
+import { BusinessSettings } from '../src/collections/Settings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -40,6 +41,7 @@ export default buildConfig({
     },
   }),
   collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries],
+  globals: [BusinessSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

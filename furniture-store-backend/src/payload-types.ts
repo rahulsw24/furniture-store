@@ -97,8 +97,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'business-settings': BusinessSetting;
+  };
+  globalsSelect: {
+    'business-settings': BusinessSettingsSelect<false> | BusinessSettingsSelect<true>;
+  };
   locale: null;
   user: User;
   jobs: {
@@ -633,6 +637,30 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "business-settings".
+ */
+export interface BusinessSetting {
+  id: number;
+  gstNumber?: string | null;
+  gstPercentage?: number | null;
+  companyAddress?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "business-settings_select".
+ */
+export interface BusinessSettingsSelect<T extends boolean = true> {
+  gstNumber?: T;
+  gstPercentage?: T;
+  companyAddress?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
