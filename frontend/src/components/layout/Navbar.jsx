@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Search, ChevronDown, User } from 'lucide-react';
+import { ShoppingBag, Search, ChevronDown, User, X, Loader2 } from 'lucide-react';
 import { getAllProducts } from '../../api/products';
 import { getImageUrl } from '../../utils/getImageUrl';
 import { useCart } from '../../context/CartContext';
@@ -18,25 +18,49 @@ const Navbar = () => {
 
     const BASE_URL = import.meta.env.VITE_API_URL;
 
+    // --- SEARCH LOGIC STATES ---
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    // --- DEBOUNCE SEARCH EFFECT ---
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            return;
+        }
+
+        const delayDebounceFn = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const res = await fetch(`${BASE_URL}/api/products?where[name][contains]=${searchQuery}&limit=5`);
+                const data = await res.json();
+                setSearchResults(data.docs || []);
+            } catch (err) {
+                console.error("Search failed", err);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 400);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery]);
+
     const controlNavbar = () => {
         if (typeof window !== 'undefined') {
             const currentScrollY = window.scrollY;
             const scrollDiff = Math.abs(currentScrollY - lastScrollY);
-            const scrollThreshold = 20; // Increase this number to make it even LESS sensitive
+            const scrollThreshold = 20;
 
-            // 1. Handle background styling (Blur/Shadow)
             setIsScrolled(currentScrollY > 40);
 
-            // 2. Hide/Show logic with tolerance
             if (currentScrollY > lastScrollY && currentScrollY > 200) {
-                // Scrolling Down - Hide
                 setIsVisible(false);
                 setShowMegaMenu(false);
             } else if (currentScrollY < lastScrollY && scrollDiff > scrollThreshold) {
-                // Scrolling Up - Show ONLY if we've scrolled up more than the threshold
                 setIsVisible(true);
             } else if (currentScrollY <= 0) {
-                // Always show at the very top
                 setIsVisible(true);
             }
 
@@ -65,6 +89,58 @@ const Navbar = () => {
 
     return (
         <>
+            {/* SEARCH OVERLAY */}
+            <div className={`fixed inset-0 z-[100] bg-white transition-all duration-500 ease-in-out ${isSearchOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
+                <div className="max-w-[1440px] mx-auto px-6 md:px-12 py-12">
+                    <div className="flex justify-between items-center mb-20">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-gray-400">Search Products</span>
+                        <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="p-4 hover:rotate-90 transition-transform duration-300">
+                            <X size={24} className="text-black" />
+                        </button>
+                    </div>
+
+                    <div className="max-w-4xl mx-auto">
+                        <div className="relative group">
+                            <input
+                                autoFocus={isSearchOpen}
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="What are you looking for?"
+                                className="w-full text-4xl md:text-6xl font-serif border-b-2 border-gray-100 focus:border-black focus:outline-none pb-8 transition-colors placeholder:text-gray-100 text-black"
+                            />
+                            {isSearching && (
+                                <div className="absolute right-0 top-4">
+                                    <Loader2 className="animate-spin text-gray-400" size={32} />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {searchResults.map((product) => (
+                                <Link
+                                    key={product.id}
+                                    to={`/products/${product.slug}`}
+                                    onClick={() => setIsSearchOpen(false)}
+                                    className="flex gap-6 group items-center bg-[#F9F9F9] p-4 rounded-[2rem] hover:bg-black transition-colors"
+                                >
+                                    <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden flex-shrink-0">
+                                        <img src={getImageUrl(product)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-bold text-black group-hover:text-white uppercase tracking-widest">{product.name}</h4>
+                                        <p className="text-xs text-gray-400 group-hover:text-gray-300">₹{product.price.toLocaleString('en-IN')}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                            {searchQuery.length > 2 && searchResults.length === 0 && !isSearching && (
+                                <p className="text-gray-400 font-serif italic text-xl">No products found for "{searchQuery}"</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* PROMO BAR */}
             <div className="w-full bg-[#1A1A1A] text-white text-[9px] sm:text-[10px] tracking-[0.3em] py-2.5 text-center uppercase font-bold relative z-[60]">
                 BOLTLESS: THE FUTURE OF TOOL-FREE ASSEMBLY
@@ -81,7 +157,10 @@ const Navbar = () => {
             >
                 <nav className="flex items-center justify-between px-6 py-6 md:px-12 max-w-[1440px] mx-auto">
                     <div className="flex-1">
-                        <Search className="w-5 h-5 cursor-pointer text-black hover:scale-110 transition-transform" />
+                        <Search
+                            className="w-5 h-5 cursor-pointer text-black hover:scale-110 transition-transform"
+                            onClick={() => setIsSearchOpen(true)}
+                        />
                     </div>
 
                     {/* STYLIZED LOGO SECTION */}
@@ -116,15 +195,15 @@ const Navbar = () => {
 
                 {/* Desktop Menu */}
                 <div className="hidden lg:flex items-center justify-center gap-10 pb-6">
-                    {['Best Sellers', 'Products', 'How it Works', 'Our Story', 'Reach Out'].map((item) => {
+                    {['Best Sellers', 'Products', 'Our Story', 'Reach Out'].map((item) => {
                         const isProducts = item === 'Products';
                         const isBestSellers = item === 'Best Sellers';
-                        const isReachOut = item === 'Reach Out'; // Added check for Reach Out
+                        const isReachOut = item === 'Reach Out';
 
-                        // Determine the path based on the item name
                         let targetPath = "#";
                         if (isProducts) targetPath = "/products";
                         if (isReachOut) targetPath = "/reach-out";
+                        if (item === 'Our Story') targetPath = "/our-story"; // 👈 ADD THIS LINE
 
                         return (
                             <div
