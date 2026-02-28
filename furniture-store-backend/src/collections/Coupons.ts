@@ -11,7 +11,14 @@ export const Coupons: CollectionConfig = {
     read: () => true,
 
     // Strictly restricted to Admins now that your role is fixed
-    create: ({ req: { user } }) => user?.role === 'admin',
+    // This check is safer: it checks if a user exists AND if they are an admin
+    create: ({ req: { user } }) => {
+      if (!user) return false
+      console.log('User Role', user.role)
+      if (user.role === 'admin') return true
+      return false
+    },
+
     update: ({ req: { user } }) => user?.role === 'admin',
     delete: ({ req: { user } }) => user?.role === 'admin',
   },
