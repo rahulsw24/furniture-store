@@ -5,10 +5,11 @@ import { useNavigate, Link } from "react-router-dom"
 import {
     MapPin, Phone, User, Loader2, ChevronLeft,
     Tag, X, Ticket, ChevronRight, Mail,
-    Home, Briefcase, Plus
+    Home, Briefcase, Plus, CreditCard, Banknote, Sparkles
 } from "lucide-react"
 
 const API_URL = import.meta.env.VITE_API_URL
+const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID
 
 const Checkout = () => {
     const { detailedCart, totalPrice, clearCart } = useCart()
@@ -27,8 +28,9 @@ const Checkout = () => {
         email: user?.email || "",
     })
 
-    // --- ADDRESS SELECTION STATE ---
+    // --- PAYMENT & ADDRESS STATES ---
     const [selectedAddressIndex, setSelectedAddressIndex] = useState(null)
+    const [paymentMethod, setPaymentMethod] = useState("cod") // Default to COD
 
     // Coupon & Offers State
     const [couponCode, setCouponCode] = useState("")
@@ -38,6 +40,17 @@ const Checkout = () => {
     const [availableCoupons, setAvailableCoupons] = useState([])
     const [showOffers, setShowOffers] = useState(false)
     const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+
+    // Helper to dynamically load Razorpay script
+    const loadRazorpayScript = () => {
+        return new Promise((resolve) => {
+            const script = document.createElement("script")
+            script.src = "https://checkout.razorpay.com/v1/checkout.js"
+            script.onload = () => resolve(true)
+            script.onerror = () => resolve(false)
+            document.body.appendChild(script)
+        })
+    }
 
     // Auto-select default address on load
     useEffect(() => {
@@ -152,17 +165,8 @@ const Checkout = () => {
                 discount,
                 coupon_code: appliedCoupon,
                 total: finalTotal,
-                shipping_address: {
-                    full_name: form.full_name,
-                    phone: form.phone,
-                    line1: form.line1,
-                    line2: form.line2,
-                    city: form.city,
-                    state: form.state,
-                    postal_code: form.postal_code,
-                    country: form.country,
-                },
-                payment_method: "cod",
+                shipping_address: { ...form },
+                payment_method: paymentMethod,
                 payment_status: "pending",
                 order_status: "pending",
             }
@@ -180,8 +184,44 @@ const Checkout = () => {
                 setIsPlacingOrder(false)
                 return
             }
-            clearCart()
-            navigate(`/order-success/${data.id || data.doc.id}`)
+
+            const orderDoc = data.doc || data;
+
+            if (paymentMethod === "razorpay") {
+                const isLoaded = await loadRazorpayScript()
+                if (!isLoaded) {
+                    alert("Razorpay SDK failed to load.")
+                    setIsPlacingOrder(false)
+                    return
+                }
+
+                const options = {
+                    key: RAZORPAY_KEY_ID,
+                    amount: finalTotal * 100,
+                    currency: "INR",
+                    name: "BOLTLESS",
+                    description: `Order #${orderDoc.order_number}`,
+                    image: "/logo.png",
+                    order_id: orderDoc.payment_details?.razorpay_order_id,
+                    handler: async (response) => {
+                        clearCart()
+                        navigate(`/order-success/${orderDoc.id}`)
+                    },
+                    prefill: {
+                        name: form.full_name,
+                        email: form.email,
+                        contact: form.phone
+                    },
+                    theme: { color: "#000000" }
+                }
+
+                const rzp = new window.Razorpay(options)
+                rzp.open()
+                setIsPlacingOrder(false)
+            } else {
+                clearCart()
+                navigate(`/order-success/${orderDoc.id}`)
+            }
         } catch (err) {
             console.error(err)
             setIsPlacingOrder(false)
@@ -197,11 +237,10 @@ const Checkout = () => {
                 </Link>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-                    {/* LEFT: Shipping Form */}
                     <div className="lg:col-span-7 space-y-12">
                         <div>
                             <h1 className="text-4xl md:text-5xl font-serif text-gray-900 mb-4">Checkout</h1>
-                            <p className="text-gray-500 text-xs font-bold uppercase tracking-[0.2em]">Delivery Details</p>
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-[0.2em]">Shipping & Payment</p>
                         </div>
 
                         {/* --- SAVED ADDRESSES QUICK SELECT --- */}
@@ -233,6 +272,27 @@ const Checkout = () => {
                                 </div>
                             </section>
                         )}
+
+                        {/* --- PAYMENT METHOD SELECTION --- */}
+                        <section className="space-y-6 pt-8 border-t border-gray-50">
+                            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Payment Method</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <PaymentCard
+                                    active={paymentMethod === 'razorpay'}
+                                    comingSoon
+                                    icon={<CreditCard size={18} />}
+                                    title="Online Payment"
+                                    desc="UPI, Cards, Netbanking"
+                                />
+                                <PaymentCard
+                                    active={paymentMethod === 'cod'}
+                                    onClick={() => setPaymentMethod('cod')}
+                                    icon={<Banknote size={18} />}
+                                    title="Cash on Delivery"
+                                    desc="Pay when you receive"
+                                />
+                            </div>
+                        </section>
 
                         <form id="checkout-form" onSubmit={handleSubmit} className="space-y-8 pt-8 border-t border-gray-50">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -317,25 +377,6 @@ const Checkout = () => {
                                         </button>
                                     </div>
                                 )}
-
-                                {showOffers && !appliedCoupon && (
-                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                        {availableCoupons.map((coupon) => {
-                                            const isLocked = coupon.min_order && totalPrice < coupon.min_order;
-                                            const diff = coupon.min_order - totalPrice;
-                                            return (
-                                                <div key={coupon.id} className={`p-4 rounded-2xl border transition-all ${isLocked ? 'bg-gray-50/50 border-gray-100 opacity-60' : 'bg-white border-black/5 hover:border-black cursor-pointer shadow-sm'}`} onClick={() => !isLocked && applyCoupon(coupon.code)}>
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black tracking-tighter uppercase ${isLocked ? 'bg-gray-200 text-gray-500' : 'bg-black text-white'}`}>{coupon.code}</span>
-                                                        {!isLocked && <span className="text-[9px] font-bold uppercase tracking-widest text-black">Apply</span>}
-                                                    </div>
-                                                    <p className="text-[11px] font-bold text-gray-900 leading-tight mb-1">{coupon.type === 'percentage' ? `${coupon.value}% OFF` : `₹${coupon.value} OFF`}</p>
-                                                    {isLocked && <p className="text-[9px] text-gray-400 font-medium">Add ₹{diff.toLocaleString()} more to unlock</p>}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
                             </div>
 
                             <div className="space-y-4 pt-4 border-t border-gray-200">
@@ -363,7 +404,7 @@ const Checkout = () => {
                             </div>
 
                             <button form="checkout-form" type="submit" disabled={isPlacingOrder} className="w-full bg-black text-white py-5 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-xl shadow-black/10 mt-10 flex items-center justify-center gap-3 disabled:opacity-50">
-                                {isPlacingOrder ? <>PLACING ORDER <Loader2 size={14} className="animate-spin" /></> : "Place Order (COD)"}
+                                {isPlacingOrder ? <>PROCESSING <Loader2 size={14} className="animate-spin" /></> : "Place Order (COD)"}
                             </button>
                         </div>
                     </div>
@@ -373,11 +414,29 @@ const Checkout = () => {
     )
 }
 
+const PaymentCard = ({ active, onClick, icon, title, desc, comingSoon }) => (
+    <div
+        onClick={!comingSoon ? onClick : undefined}
+        className={`relative p-6 rounded-[2rem] border transition-all flex items-center gap-5 ${comingSoon ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-100' : 'cursor-pointer'} ${active && !comingSoon ? 'border-black bg-white shadow-xl ring-1 ring-black' : 'border-gray-100 bg-[#F9F9F9] hover:border-gray-200'}`}
+    >
+        {comingSoon && (
+            <div className="absolute top-4 right-4 bg-gray-900 text-white text-[7px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-full flex items-center gap-1">
+                <Sparkles size={8} /> Coming Soon
+            </div>
+        )}
+        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${active && !comingSoon ? 'bg-black text-white' : 'bg-white text-gray-400'}`}>{icon}</div>
+        <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-black">{title}</p>
+            <p className="text-[10px] text-gray-400 font-medium">{desc}</p>
+        </div>
+    </div>
+)
+
 const InputGroup = ({ label, icon, ...props }) => (
     <div className="space-y-2 flex-1">
         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-900 ml-5">{label}</label>
         <div className="relative">
-            <input {...props} className="w-full px-6 py-5 rounded-2xl border border-gray-100 bg-[#F9F9F9] text-sm focus:outline-none focus:border-black transition-all placeholder:text-gray-300" />
+            <input {...props} className="w-full px-6 py-5 rounded-2xl border border-gray-100 bg-[#F9F9F9] text-sm focus:outline-none focus:border-black transition-all placeholder:text-gray-300 text-black" />
             {icon && <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300">{icon}</div>}
         </div>
     </div>

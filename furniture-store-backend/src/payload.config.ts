@@ -16,6 +16,7 @@ import { validateCoupon } from './api/validate-coupon'
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { Inquiries } from './collections/Inquiries'
 import { BusinessSettings } from '../src/collections/Settings'
+import { Subscribers } from './collections/Subscribers'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -24,6 +25,7 @@ console.log('DEBUG: Current Secret:', process.env.PAYLOAD_SECRET ? 'LOADED' : 'M
 export default buildConfig({
   admin: {
     user: Users.slug,
+    autoLogin: false,
     importMap: {
       baseDir: path.resolve(dirname),
     },
@@ -40,7 +42,7 @@ export default buildConfig({
       },
     },
   }),
-  collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries],
+  collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries, Subscribers],
   globals: [BusinessSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
