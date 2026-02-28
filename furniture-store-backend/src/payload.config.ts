@@ -23,6 +23,7 @@ const dirname = path.dirname(filename)
 
 console.log('DEBUG: Current Secret:', process.env.PAYLOAD_SECRET ? 'LOADED' : 'MISSING')
 export default buildConfig({
+  serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000',
   admin: {
     user: Users.slug,
     autoLogin: false,
@@ -52,27 +53,30 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
+      max: 5,
     },
   }),
   cors: [
     'http://localhost:3000',
-    'http://localhost:5173', // Vite default
+    process.env.PAYLOAD_PUBLIC_SERVER_URL || '',
     'http://127.0.0.1:5173',
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
     'https://furniture-store-pi-drab.vercel.app',
     'https://furniture-store-backend.onrender.com',
-  ],
+  ].filter(Boolean),
   csrf: [
     'http://localhost:3000',
+    process.env.PAYLOAD_PUBLIC_SERVER_URL || '',
     'http://localhost:5173',
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
     'https://furniture-store-pi-drab.vercel.app',
     'https://furniture-store-backend.onrender.com',
-  ],
+  ].filter(Boolean),
   sharp,
   endpoints: [
     { path: '/create-order', method: 'post', handler: createOrder },
     { path: '/validate-coupon', method: 'post', handler: validateCoupon },
   ],
   plugins: [],
+  cookiePrefix: 'boltless',
 })
