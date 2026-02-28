@@ -4,21 +4,21 @@ import { Star } from 'lucide-react';
 const reviews = [
     {
         id: 1,
-        author: 'John S.',
+        author: 'Hrishita S.',
         rating: 5,
         quote: 'I absolutely love the simplicity of this table.',
         attribution: 'John S.'
     },
     {
         id: 2,
-        author: 'Jane K.',
+        author: 'Naman K.',
         rating: 5,
         quote: "I had never thought to design my own furniture. I can't believe this didn't exist before.",
         attribution: null
     },
     {
         id: 3,
-        author: 'Anne L.',
+        author: 'Rahul M.',
         rating: 5,
         quote: 'Such a fun weekend project to work on with the kids!',
         attribution: null
