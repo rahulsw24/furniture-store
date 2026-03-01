@@ -24,6 +24,7 @@ const dirname = path.dirname(filename)
 console.log('DEBUG: Current Secret:', process.env.PAYLOAD_SECRET ? 'LOADED' : 'MISSING')
 export default buildConfig({
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000',
+
   admin: {
     user: Users.slug,
     autoLogin: false,
@@ -46,7 +47,7 @@ export default buildConfig({
   collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries, Subscribers],
   globals: [BusinessSettings],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: process.env.PAYLOAD_SECRET!,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
@@ -78,5 +79,6 @@ export default buildConfig({
     { path: '/validate-coupon', method: 'post', handler: validateCoupon },
   ],
   plugins: [],
+
   cookiePrefix: 'boltless',
 })
