@@ -1,10 +1,10 @@
 import { withPayload } from '@payloadcms/next/withPayload'
 import path from 'path'
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
+  productionBrowserSourceMaps: false,
+
   webpack: (config) => {
-    // ⭐ ADD THIS
     config.resolve.alias['@'] = path.resolve('./src')
     config.resolve.alias['@payload-config'] = path.resolve('./src/payload.config.ts')
 
