@@ -39,8 +39,8 @@ export default buildConfig({
       host: 'smtp-relay.brevo.com',
       port: 587,
       auth: {
-        user: 'a33d3b001@smtp-brevo.com',
-        pass: 'bdT4jt2BAYJ95DQ0', // Tip: Move this to process.env.SMTP_PASS for security!
+        user: 'a462b0001@smtp-brevo.com',
+        pass: 'sZPcMyGQSgjFT9mW', // Tip: Move this to process.env.SMTP_PASS for security!
       },
       // ADD THIS to see why the handshake is failing in logs
       debug: true,
