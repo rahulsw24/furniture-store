@@ -42,6 +42,9 @@ export default buildConfig({
         user: 'a33d3b001@smtp-brevo.com',
         pass: 'bdT4jt2BAYJ95DQ0', // Tip: Move this to process.env.SMTP_PASS for security!
       },
+      // ADD THIS to see why the handshake is failing in logs
+      debug: true,
+      logger: true,
     },
   }),
   collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries, Subscribers],
