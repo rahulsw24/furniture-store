@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 export const Users: CollectionConfig = {
   slug: 'users',
+
   auth: true,
   access: {
     // Anyone can create an account (Sign up)
@@ -32,34 +33,11 @@ export const Users: CollectionConfig = {
     afterChange: [
       async ({ doc, operation, req }) => {
         if (operation === 'create') {
-          const isAdmin = doc.role === 'admin'
-
-          try {
-            // We 'await' this now to ensure it triggers before the request ends on Render
-            await req.payload.sendEmail({
-              to: doc.email,
-              subject: isAdmin
-                ? 'Admin Access Granted | BoltLess Dashboard'
-                : 'Welcome to BoltLess!',
-              html: isAdmin
-                ? `
-                <div style="font-family: sans-serif; padding: 40px; color: #1a1a1a; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px;">
-                  <h1 style="font-size: 24px; border-bottom: 1px solid #eee; padding-bottom: 20px; font-weight: 700;">Dashboard Access Granted</h1>
-                  <p>Hello ${doc.name || 'Admin'},</p>
-                  <p>Your administrator account for the <strong>BoltLess Furniture Store</strong> is now active.</p>
-                  <p>You can manage products, view orders, and handle site settings via the link below:</p>
-                  <div style="text-align: center; margin: 30px 0;">
-                    <a href="https://admin.boltless.in/admin" style="display: inline-block; padding: 16px 32px; background: #000; color: #fff; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 13px; letter-spacing: 2px; text-transform: uppercase;">
-                      Access Admin Panel
-                    </a>
-                  </div>
-                  <p style="font-size: 12px; color: #999; line-height: 1.5;">
-                    If you did not expect this access, please contact the system owner immediately.<br/>
-                    © 2026 BOLTLESS FURNITURE
-                  </p>
-                </div>
-                `
-                : `
+          // We don't 'await' this so it runs in the background
+          req.payload.sendEmail({
+            to: doc.email,
+            subject: 'Welcome to BoltLess!',
+            html: `
 <!DOCTYPE html>
 <html>
 <head>
@@ -104,7 +82,7 @@ export const Users: CollectionConfig = {
               <table border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center" bgcolor="#000000" style="border-radius: 50px;">
-                    <a href="https://boltless.in/products" target="_blank" style="font-size: 12px; font-weight: 700; color: #ffffff; text-decoration: none; padding: 20px 48px; display: inline-block; letter-spacing: 2px; text-transform: uppercase;">
+                    <a href="https://yourstore.com/products" target="_blank" style="font-size: 12px; font-weight: 700; color: #ffffff; text-decoration: none; padding: 20px 48px; display: inline-block; letter-spacing: 2px; text-transform: uppercase;">
                       Start Exploring
                     </a>
                   </td>
@@ -141,10 +119,7 @@ export const Users: CollectionConfig = {
 </body>
 </html>
 `,
-            })
-          } catch (error) {
-            console.error('CRITICAL: Welcome Email Failed to send:', error)
-          }
+          })
         }
       },
       async ({ doc, operation, req }) => {
@@ -153,9 +128,12 @@ export const Users: CollectionConfig = {
           const guestOrders = await req.payload.find({
             collection: 'orders',
             where: {
-              and: [{ customer_email: { equals: doc.email } }, { user: { equals: null } }],
+              and: [
+                { customer_email: { equals: doc.email } },
+                { user: { equals: null } }, // Better than 'exists: false' in SQL
+              ],
             },
-            req,
+            req, // 👈 PASS THE REQ (This shares the transaction)
           })
 
           if (guestOrders.totalDocs > 0) {
@@ -165,7 +143,7 @@ export const Users: CollectionConfig = {
                   collection: 'orders',
                   id: order.id,
                   data: { user: doc.id },
-                  req,
+                  req, // 👈 CRITICAL: This prevents the Foreign Key error
                 }),
               ),
             )
