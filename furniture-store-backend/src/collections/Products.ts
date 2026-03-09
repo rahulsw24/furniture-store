@@ -59,11 +59,17 @@ export const Products: CollectionConfig = {
       name: 'price',
       type: 'number',
       required: true,
+      admin: {
+        placeholder: 'Current selling price',
+      },
     },
-
     {
       name: 'compare_price',
       type: 'number',
+      admin: {
+        placeholder: 'Original/MSRP price',
+        description: 'Leave blank if not on sale',
+      },
     },
 
     {

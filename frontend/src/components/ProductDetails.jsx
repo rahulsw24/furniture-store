@@ -252,7 +252,22 @@ const ProductDetails = () => {
                 <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-32 self-start pb-20">
                     <div>
                         <h1 className="text-4xl md:text-5xl font-serif text-gray-900 mb-2 leading-tight">{product.name}</h1>
-                        <p className="text-2xl font-medium text-gray-900">₹{Number(product.price).toLocaleString('en-IN')}</p>
+                        <div className="flex items-baseline gap-4 mb-2">
+                            <p className="text-3xl font-medium text-gray-900">
+                                ₹{Number(product.price).toLocaleString('en-IN')}
+                            </p>
+
+                            {product.compare_price && Number(product.compare_price) > Number(product.price) && (
+                                <>
+                                    <p className="text-xl text-gray-400 line-through decoration-gray-300">
+                                        ₹{Number(product.compare_price).toLocaleString('en-IN')}
+                                    </p>
+                                    <span className="bg-red-50 text-red-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
+                                        {Math.round(((product.compare_price - product.price) / product.compare_price) * 100)}% OFF
+                                    </span>
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     <div className="space-y-4">

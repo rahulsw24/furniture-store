@@ -229,6 +229,9 @@ export interface Product {
    */
   materials?: string | null;
   price: number;
+  /**
+   * Leave blank if not on sale
+   */
   compare_price?: number | null;
   images: (number | Media)[];
   category: number | Category;
