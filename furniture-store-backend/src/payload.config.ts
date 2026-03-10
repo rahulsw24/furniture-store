@@ -24,6 +24,7 @@ const dirname = path.dirname(filename)
 console.log('DEBUG: Current Secret:', process.env.PAYLOAD_SECRET ? 'LOADED' : 'MISSING')
 export default buildConfig({
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000',
+
   admin: {
     user: Users.slug,
     autoLogin: false,
@@ -32,21 +33,22 @@ export default buildConfig({
     },
   },
   email: nodemailerAdapter({
-    defaultFromAddress: 'contentrs2407@gmail.com',
+    defaultFromAddress: 'team@boltless.in',
     defaultFromName: 'BoltLess Furniture Store',
     transportOptions: {
       host: 'smtp-relay.brevo.com',
       port: 587,
       auth: {
-        user: 'a33d3b001@smtp-brevo.com',
-        pass: 'bdT4jt2BAYJ95DQ0', // Tip: Move this to process.env.SMTP_PASS for security!
+        user: 'a462b0001@smtp-brevo.com',
+        pass: 'sZPcMyGQSgjFT9mW', // Tip: Move this to process.env.SMTP_PASS for security!
       },
+      // ADD THIS to see why the handshake is failing in logs
     },
   }),
   collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries, Subscribers],
   globals: [BusinessSettings],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: process.env.PAYLOAD_SECRET!,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
@@ -60,6 +62,9 @@ export default buildConfig({
     'http://localhost:3000',
     process.env.PAYLOAD_PUBLIC_SERVER_URL || '',
     'http://127.0.0.1:5173',
+    'http://localhost:5173',
+    'https://www.boltless.in',
+    'https://admin.boltless.in',
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
     'https://furniture-store-pi-drab.vercel.app',
     'https://furniture-store-backend.onrender.com',
@@ -68,6 +73,8 @@ export default buildConfig({
     'http://localhost:3000',
     process.env.PAYLOAD_PUBLIC_SERVER_URL || '',
     'http://localhost:5173',
+    'https://www.boltless.in',
+    'https://admin.boltless.in',
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',
     'https://furniture-store-pi-drab.vercel.app',
     'https://furniture-store-backend.onrender.com',
@@ -78,5 +85,6 @@ export default buildConfig({
     { path: '/validate-coupon', method: 'post', handler: validateCoupon },
   ],
   plugins: [],
+
   cookiePrefix: 'boltless',
 })

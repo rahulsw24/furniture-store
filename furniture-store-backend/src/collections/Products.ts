@@ -29,12 +29,21 @@ export const Products: CollectionConfig = {
       type: 'textarea',
       required: true,
       admin: {
-        description: 'Use --- to separate story sections. First line is the title.',
+        description: 'Use --- to separate story sections. First line of each section is the title.',
       },
     },
-    // --- NEW TECHNICAL DETAILS GROUP ---
+    // --- NEW AMAZON-STYLE HIGHLIGHTS ---
     {
-      type: 'row', // Put these side-by-side in the CMS UI
+      name: 'highlights',
+      type: 'textarea',
+      admin: {
+        description: 'Paste "About this item" bullets here. Use TITLE: Description format.',
+        placeholder: 'MODERN DESIGN: Low-sitting lounge chair with a sculptural silhouette...',
+      },
+    },
+    // --- TECHNICAL DETAILS GROUP ---
+    {
+      type: 'row',
       fields: [
         {
           name: 'dimensions',
@@ -59,11 +68,17 @@ export const Products: CollectionConfig = {
       name: 'price',
       type: 'number',
       required: true,
+      admin: {
+        placeholder: 'Current selling price',
+      },
     },
-
     {
       name: 'compare_price',
       type: 'number',
+      admin: {
+        placeholder: 'Original/MSRP price',
+        description: 'Leave blank if not on sale',
+      },
     },
 
     {
