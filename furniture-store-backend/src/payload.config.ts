@@ -33,7 +33,7 @@ export default buildConfig({
     },
   },
   email: nodemailerAdapter({
-    defaultFromAddress: 'contentrs2407@gmail.com',
+    defaultFromAddress: 'team@boltless.in',
     defaultFromName: 'BoltLess Furniture Store',
     transportOptions: {
       host: 'smtp-relay.brevo.com',
@@ -43,8 +43,6 @@ export default buildConfig({
         pass: 'sZPcMyGQSgjFT9mW', // Tip: Move this to process.env.SMTP_PASS for security!
       },
       // ADD THIS to see why the handshake is failing in logs
-      debug: true,
-      logger: true,
     },
   }),
   collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries, Subscribers],
@@ -64,6 +62,7 @@ export default buildConfig({
     'http://localhost:3000',
     process.env.PAYLOAD_PUBLIC_SERVER_URL || '',
     'http://127.0.0.1:5173',
+    'http://localhost:5173',
     'https://www.boltless.in',
     'https://admin.boltless.in',
     'https://furniture-store-git-payload-dev-rahulsw24s-projects.vercel.app',

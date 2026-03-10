@@ -217,9 +217,13 @@ export interface Product {
   name: string;
   slug: string;
   /**
-   * Use --- to separate story sections. First line is the title.
+   * Use --- to separate story sections. First line of each section is the title.
    */
   description: string;
+  /**
+   * Paste "About this item" bullets here. Use TITLE: Description format.
+   */
+  highlights?: string | null;
   /**
    * One dimension per line.
    */
@@ -516,6 +520,7 @@ export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   description?: T;
+  highlights?: T;
   dimensions?: T;
   materials?: T;
   price?: T;
