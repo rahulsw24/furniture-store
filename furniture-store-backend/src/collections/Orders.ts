@@ -1,3 +1,4 @@
+import { inngest } from '@/inngest/client'
 import { generateInvoicePDF } from '@/utils/generateInvoice'
 import type { CollectionConfig } from 'payload'
 
@@ -147,99 +148,30 @@ export const Orders: CollectionConfig = {
       },
     ],
     afterChange: [
-      async ({ doc, previousDoc, operation, req }) => {
-        const { payload } = req
-        const recipient = doc.customer_email
-
+      async ({ doc, previousDoc, operation }) => {
+        // CASE 1: NEW ORDER
         if (operation === 'create') {
-          try {
-            // 1. We cast payload to 'any' to stop the 'never' type inference on findGlobal
-            const settings = await (payload as any).findGlobal({
-              slug: 'business-settings',
+          await inngest
+            .send({
+              name: 'order.created',
+              data: { orderId: doc.id },
             })
-
-            // 2. Generate Invoice Buffer
-            const invoiceBuffer = await generateInvoicePDF(doc, settings)
-
-            const emailAttachments = [
-              {
-                filename: `Invoice-${doc.order_number}.pdf`,
-                content: invoiceBuffer,
-              },
-            ]
-
-            // 3. Send to CUSTOMER
-            await payload.sendEmail({
-              to: recipient,
-              subject: `Order Confirmed - #${doc.order_number}`,
-              attachments: emailAttachments,
-              html: generateOrderEmailHtml(
-                doc,
-                'Thank you for your order. Your invoice is attached.',
-              ),
-            })
-
-            // 4. Send to ADMIN
-            await payload.sendEmail({
-              to: 'contentrs2407@gmail.com',
-              subject: `🚨 NEW ORDER - #${doc.order_number}`,
-              attachments: emailAttachments,
-              html: generateAdminOrderEmailHtml(doc),
-            })
-          } catch (error) {
-            // Standard Payload logger check
-            if (payload.logger) {
-              payload.logger.error(`Error sending creation emails: ${error}`)
-            } else {
-              console.error(`Error sending creation emails:`, error)
-            }
-          }
-          return
+            .catch((err) => console.error('Inngest order.created failed:', err))
         }
 
-        // ------------------------------------------------------
-        // CASE 2: STATUS UPDATES
-        // ------------------------------------------------------
+        // CASE 2: STATUS UPDATE
         const statusChanged = doc.order_status !== previousDoc?.order_status
-
         if (operation === 'update' && statusChanged) {
-          let statusMessage = ''
-          let subject = `Update on Order #${doc.order_number}`
-
-          switch (doc.order_status) {
-            case 'confirmed':
-              statusMessage = 'Your order has been confirmed and is officially in our system.'
-              break
-            case 'processing':
-              statusMessage = "Our craftsmen are now working on your pieces. We're on it!"
-              break
-            case 'shipped':
-              subject = `Your BoltLess order has shipped! 🚚`
-              statusMessage = `Great news! Your order is on the way. ${
-                doc.tracking?.tracking_number ? `Tracking: ${doc.tracking.tracking_number}` : ''
-              }`
-              break
-            case 'out_for_delivery':
-              statusMessage = 'Your furniture is out for delivery and should arrive later today.'
-              break
-            case 'delivered':
-              subject = `Delivered: Order #${doc.order_number}`
-              statusMessage =
-                'Your order has been delivered. We hope you love your new simplified space!'
-              break
-            case 'cancelled':
-              statusMessage =
-                'Your order has been cancelled. If this was a mistake, please contact us.'
-              break
-            default:
-              statusMessage = `The status of your order has changed to: ${doc.order_status}.`
-          }
-
-          await payload.sendEmail({
-            to: recipient,
-            subject: subject,
-            html: generateOrderEmailHtml(doc, statusMessage),
-          })
+          await inngest
+            .send({
+              name: 'order.status.updated',
+              data: {
+                orderId: doc.id,
+                oldStatus: previousDoc?.order_status,
+                newStatus: doc.order_status,
+              },
+            })
+            .catch((err) => console.error('Inngest order.status failed:', err))
         }
       },
     ],

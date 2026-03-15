@@ -1,5 +1,7 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
 
 const Hero = () => {
     return (
@@ -23,7 +25,7 @@ const Hero = () => {
                             {[...Array(5)].map((_, i) => <span key={i} className="text-sm">★</span>)}
                         </div>
                         <span className="text-[10px] tracking-[0.15em] font-bold uppercase text-white/90">
-                            15,000+ Happy Customers
+                            1,000+ Happy Customers
                         </span>
                     </div>
 
@@ -39,11 +41,14 @@ const Hero = () => {
                         Built to last, finished by you.
                     </p>
 
-                    {/* Action Button */}
-                    <button className="group flex items-center gap-4 bg-white text-black px-10 py-5 rounded-full text-[11px] uppercase tracking-[0.2em] font-bold shadow-2xl hover:bg-black hover:text-white transition-all duration-500 transform hover:scale-105">
+                    {/* Action Button - Linked to /products */}
+                    <Link
+                        to="/products"
+                        className="group inline-flex items-center gap-4 bg-white text-black px-10 py-5 rounded-full text-[11px] uppercase tracking-[0.2em] font-bold shadow-2xl hover:bg-black hover:text-white transition-all duration-500 transform hover:scale-105"
+                    >
                         Shop Collection
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                    </Link>
                 </div>
             </div>
         </section>

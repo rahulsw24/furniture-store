@@ -101,9 +101,11 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'business-settings': BusinessSetting;
+    'promo-bar': PromoBar;
   };
   globalsSelect: {
     'business-settings': BusinessSettingsSelect<false> | BusinessSettingsSelect<true>;
+    'promo-bar': PromoBarSelect<false> | PromoBarSelect<true>;
   };
   locale: null;
   user: User;
@@ -685,12 +687,39 @@ export interface BusinessSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promo-bar".
+ */
+export interface PromoBar {
+  id: number;
+  text: string;
+  /**
+   * Promo text will show until this date. After this, it switches to the fallback text.
+   */
+  valid_until?: string | null;
+  fallback_text: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "business-settings_select".
  */
 export interface BusinessSettingsSelect<T extends boolean = true> {
   gstNumber?: T;
   gstPercentage?: T;
   companyAddress?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promo-bar_select".
+ */
+export interface PromoBarSelect<T extends boolean = true> {
+  text?: T;
+  valid_until?: T;
+  fallback_text?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -69,10 +69,14 @@ export const createOrder: PayloadHandler = async (req) => {
   const finalTotal = subtotal - finalDiscount
 
   // 3. Create Order
+  const year = new Date().getFullYear()
+  const count = await req.payload.count({ collection: 'orders' })
+  const newOrderNumber = `BLT-${year}-${(count.totalDocs + 1).toString().padStart(4, '0')}-${Math.random().toString(36).substring(7).toUpperCase()}`
   const order = await req.payload.create({
     collection: 'orders',
     data: {
       ...rest,
+      order_number: newOrderNumber,
       items: validatedItems,
       subtotal,
       discount: finalDiscount,
