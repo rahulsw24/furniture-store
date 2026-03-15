@@ -39,12 +39,14 @@ export default buildConfig({
     defaultFromName: 'BoltLess Furniture Store',
     transportOptions: {
       host: 'smtp-relay.brevo.com',
-      port: 587,
+      port: 465, // Using 465 for better Render compatibility
+      secure: true,
       auth: {
         user: 'a462b0001@smtp-brevo.com',
-        pass: 'sZPcMyGQSgjFT9mW', // Tip: Move this to process.env.SMTP_PASS for security!
+        pass: process.env.SMTP_PASS, // It will pull the value from Render Environment
       },
-      // ADD THIS to see why the handshake is failing in logs
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
     },
   }),
   collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries, Subscribers],
