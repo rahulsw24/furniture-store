@@ -17,6 +17,8 @@ import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { Inquiries } from './collections/Inquiries'
 import { BusinessSettings } from '../src/collections/Settings'
 import { Subscribers } from './collections/Subscribers'
+import { syncSupabaseUser } from './api/sync-supabase'
+import { PromoBar } from './collections/PromoBar'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -46,7 +48,7 @@ export default buildConfig({
     },
   }),
   collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries, Subscribers],
-  globals: [BusinessSettings],
+  globals: [BusinessSettings, PromoBar],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET!,
   typescript: {
@@ -83,6 +85,8 @@ export default buildConfig({
   endpoints: [
     { path: '/create-order', method: 'post', handler: createOrder },
     { path: '/validate-coupon', method: 'post', handler: validateCoupon },
+    // ADD THIS LINE
+    { path: '/sync-supabase', method: 'post', handler: syncSupabaseUser },
   ],
   plugins: [],
 

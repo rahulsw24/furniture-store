@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getProductBySlug, getAllProducts } from '../api/products'
 import { useCart } from '../context/CartContext'
 import { getImageUrl } from '../utils/getImageUrl'
+import BlueprintVisualizer from './BlueprintVisualiser'
 
 const BASE_URL = import.meta.env.VITE_API_URL
 
@@ -76,7 +77,7 @@ const renderAccordionContent = (text, fallback) => {
 };
 
 /* ---------- STORY PARSER (Smart Editorial Version) ---------- */
-const renderBeautifulStory = (description) => {
+const renderBeautifulStory = (description, productImages, dimensions) => {
     if (!description) return null;
 
     const hasSeparator = description.includes('---');
@@ -91,9 +92,14 @@ const renderBeautifulStory = (description) => {
     const heroTitle = heroLines[0];
     const heroLead = heroLines.slice(1).join('\n');
 
+    const getSectionImage = (index) => {
+        if (!productImages || productImages.length === 0) return null;
+        return productImages[index % productImages.length];
+    };
+
     return (
-        <section className="mt-32 py-32 bg-[#FAF9F6] border-t border-b border-gray-100 -mx-6 md:-mx-12 px-6 md:px-12">
-            <div className="max-w-6xl mx-auto">
+        <section className="mt-16 md:mt-32 py-16 md:py-32 bg-[#FAF9F6] border-t border-b border-gray-100 -mx-6 md:-mx-12 px-6 md:px-12">
+            <div className="max-w-[1440px] mx-auto">
 
                 {/* --- HERO NARRATIVE --- */}
                 <motion.div
@@ -101,17 +107,17 @@ const renderBeautifulStory = (description) => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.8 }}
-                    className="text-center mb-40"
+                    className="text-center mb-24 md:mb-40"
                 >
                     <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-gray-400 block mb-8">
                         The Design Story
                     </span>
-                    <h3 className="text-5xl md:text-8xl font-serif text-black leading-[1.1] mb-12 tracking-tight max-w-5xl mx-auto">
+                    <h3 className="text-4xl md:text-8xl font-serif text-black leading-[1.1] mb-12 tracking-tight max-w-5xl mx-auto px-4">
                         {heroTitle}
                     </h3>
 
                     {heroLead && (
-                        <p className="text-xl md:text-2xl text-gray-500 font-light leading-relaxed italic max-w-2xl mx-auto">
+                        <p className="text-lg md:text-2xl text-gray-500 font-light leading-relaxed italic max-w-2xl mx-auto px-6">
                             {heroLead}
                         </p>
                     )}
@@ -124,9 +130,18 @@ const renderBeautifulStory = (description) => {
                     />
                 </motion.div>
 
-                {/* --- BODY SECTIONS (Alternating Zig-Zag) --- */}
+                {/* --- BLUEPRINT VISUALIZER (Commented out as requested) --- */}
+
+                {/* {dimensions && (
+                    <BlueprintVisualizer
+                        dimensionsText={dimensions}
+                        type="chair" 
+                    />
+                )} */}
+
+                {/* --- BODY SECTIONS (Smart Stacking for Mobile, Zig-Zag for Desktop) --- */}
                 {bodySections.length > 0 && (
-                    <div className="space-y-48">
+                    <div className="space-y-32 md:space-y-48 lg:space-y-64">
                         {bodySections.map((section, index) => {
                             const lines = section.split('\n').filter(l => l.trim() !== "");
                             const isHeaderDetected = lines.length > 1 && lines[0].length < 60;
@@ -134,30 +149,49 @@ const renderBeautifulStory = (description) => {
                             const sectionBody = isHeaderDetected ? lines.slice(1).join('\n') : lines.join('\n');
 
                             const isShifted = index % 2 !== 0;
+                            const sectionImg = getSectionImage(index);
 
                             return (
                                 <motion.div
                                     key={index}
-                                    initial={{ opacity: 0, x: isShifted ? 40 : -40 }}
-                                    whileInView={{ opacity: 1, x: 0 }}
+                                    initial={{ opacity: 0, y: 40 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true, margin: "-100px" }}
                                     transition={{ duration: 0.8, ease: "easeOut" }}
-                                    className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+                                    className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-24 items-center"
                                 >
-                                    <div className={`lg:col-span-7 ${isShifted ? 'lg:col-start-6' : 'lg:col-start-1'}`}>
-                                        <div className="relative pl-8 md:pl-16 group">
-                                            <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200 group-hover:bg-black transition-colors duration-500" />
+                                    {/* TEXT CONTENT - Stacked order 2 on mobile */}
+                                    <div className={`lg:col-span-5 order-2 ${isShifted ? 'lg:col-start-8 lg:order-2' : 'lg:col-start-1 lg:order-1'}`}>
+                                        <div className="relative px-4 md:px-0 md:pl-16 group">
+                                            {/* Hide the vertical decorative line on mobile for a cleaner stack */}
+                                            <div className="hidden md:block absolute left-0 top-0 bottom-0 w-px bg-gray-200 group-hover:bg-black transition-colors duration-500" />
 
                                             {sectionHeader && (
-                                                <h4 className="text-2xl md:text-5xl font-serif text-black mb-8 leading-tight tracking-tight">
+                                                <h4 className="text-3xl md:text-5xl font-serif text-black mb-6 md:mb-8 leading-tight tracking-tight mt-0">
                                                     {sectionHeader}
                                                 </h4>
                                             )}
-                                            <p className="text-lg md:text-xl text-gray-600 leading-[1.9] font-light whitespace-pre-line">
+                                            <p className="text-base md:text-xl text-gray-600 leading-relaxed md:leading-[1.9] font-light whitespace-pre-line">
                                                 {sectionBody}
                                             </p>
                                         </div>
                                     </div>
+
+                                    {/* FILLER IMAGE - Stacked order 1 on mobile */}
+                                    {sectionImg && (
+                                        <div className={`lg:col-span-7 order-1 ${isShifted ? 'lg:col-start-1 lg:order-1' : 'lg:col-start-6 lg:order-2'}`}>
+                                            <motion.div
+                                                whileHover={{ scale: 1.01 }}
+                                                className="aspect-[4/3] md:aspect-[16/10] rounded-2xl md:rounded-[2.5rem] overflow-hidden bg-gray-100 shadow-xl md:shadow-2xl shadow-black/5"
+                                            >
+                                                <img
+                                                    src={getImageUrl(sectionImg)}
+                                                    alt="Story detail"
+                                                    className="w-full h-full object-cover block"
+                                                />
+                                            </motion.div>
+                                        </div>
+                                    )}
                                 </motion.div>
                             );
                         })}
@@ -169,9 +203,9 @@ const renderBeautifulStory = (description) => {
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
-                    className="mt-48 pt-16 border-t border-gray-100 text-center"
+                    className="mt-24 md:mt-48 pt-16 border-t border-gray-100 text-center"
                 >
-                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-300 italic">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-300 italic px-4">
                         BoltLess: Built to last, designed to move.
                     </p>
                 </motion.div>
@@ -189,10 +223,7 @@ const ProductDetails = () => {
     const [error, setError] = useState(null)
 
     const [activeImgIndex, setActiveImgIndex] = useState(0)
-
-    // FIXED: Changed from 'Highlights' to null so accordions start closed
     const [openAccordion, setOpenAccordion] = useState(null)
-
     const [openFaq, setOpenFaq] = useState(0)
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
@@ -241,9 +272,9 @@ const ProductDetails = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
                     <div className="lg:col-span-7 space-y-6">
                         <div className="rounded-[2.5rem] bg-gray-100 aspect-square w-full" />
-                        <div className="grid grid-cols-4 gap-4 pb-20">
+                        <div className="flex gap-4 pb-20">
                             {[...Array(4)].map((_, i) => (
-                                <div key={i} className="aspect-square bg-gray-100 rounded-2xl" />
+                                <div key={i} className="w-20 h-20 bg-gray-100 rounded-2xl" />
                             ))}
                         </div>
                     </div>
@@ -284,7 +315,7 @@ const ProductDetails = () => {
         <motion.main
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="max-w-[1440px] mx-auto px-6 md:px-12 py-10 overflow-hidden"
+            className="max-w-[1440px] mx-auto px-4 md:px-12 py-6 md:py-10 overflow-hidden"
         >
             <AnimatePresence>
                 {isPreviewOpen && (
@@ -312,15 +343,15 @@ const ProductDetails = () => {
                 )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start pt-4 lg:pt-0">
-                {/* GALLERY COLUMN */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20 items-start pt-4 lg:pt-0">
+                {/* GALLERY COLUMN - order-1 on mobile */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="lg:col-span-7 space-y-6 lg:sticky lg:top-32 order-2 lg:order-1"
+                    className="lg:col-span-7 space-y-4 md:space-y-6 lg:sticky order-1 lg:order-1"
                 >
-                    <div onClick={() => setIsPreviewOpen(true)} className="relative rounded-[2.5rem] overflow-hidden bg-[#F3F3F1] w-full aspect-square lg:aspect-auto lg:h-[70vh] group cursor-zoom-in">
+                    <div onClick={() => setIsPreviewOpen(true)} className="relative rounded-[2rem] md:rounded-[2.5rem] overflow-hidden bg-[#F3F3F1] w-full aspect-square lg:aspect-auto lg:h-[70vh] group cursor-zoom-in">
                         <motion.img
                             key={activeImgIndex}
                             initial={{ opacity: 0 }}
@@ -337,14 +368,15 @@ const ProductDetails = () => {
                             </>
                         )}
                     </div>
-                    <div className="grid grid-cols-4 gap-4 pb-10">
+
+                    <div className="flex flex-wrap gap-2 md:gap-4 pb-6 overflow-x-auto no-scrollbar">
                         {images.map((img, i) => (
                             <motion.div
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 key={i}
                                 onClick={() => setActiveImgIndex(i)}
-                                className={`aspect-square bg-[#F3F3F1] rounded-2xl overflow-hidden cursor-pointer transition-all border-2 ${activeImgIndex === i ? 'border-black' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                                className={`w-14 h-14 md:w-20 md:h-20 bg-[#F3F3F1] rounded-xl md:rounded-2xl overflow-hidden cursor-pointer transition-all border-2 ${activeImgIndex === i ? 'border-black' : 'border-transparent opacity-50 hover:opacity-100'}`}
                             >
                                 <img src={img} alt="thumb" className="w-full h-full object-cover" />
                             </motion.div>
@@ -352,22 +384,22 @@ const ProductDetails = () => {
                     </div>
                 </motion.div>
 
-                {/* DETAILS COLUMN (ALIGNED TO TOP OF IMAGE WITH PT-10) */}
+                {/* DETAILS COLUMN - order-2 on mobile */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="lg:col-span-5 lg:sticky lg:top-32 self-start pb-20 order-1 lg:order-2 lg:pt-10"
+                    className="lg:col-span-5 lg:sticky lg:top-32 self-start pb-16 order-2 lg:order-2 lg:pt-10"
                 >
-                    <div className="space-y-4">
-                        <h1 className="text-4xl md:text-6xl font-serif text-gray-900 leading-[0.9] tracking-tight mt-0">
+                    <div className="space-y-4 px-2 md:px-0">
+                        <h1 className="text-3xl md:text-6xl font-serif text-gray-900 leading-[1.1] md:leading-[0.9] tracking-tight mt-0">
                             {product.name}
                         </h1>
                         <div className="flex items-baseline gap-4">
-                            <p className="text-3xl font-medium text-gray-900">₹{Number(product.price).toLocaleString('en-IN')}</p>
+                            <p className="text-2xl md:text-3xl font-medium text-gray-900">₹{Number(product.price).toLocaleString('en-IN')}</p>
                             {product.compare_price && Number(product.compare_price) > Number(product.price) && (
                                 <>
-                                    <p className="text-xl text-gray-400 line-through decoration-gray-300">₹{Number(product.compare_price).toLocaleString('en-IN')}</p>
+                                    <p className="text-lg md:text-xl text-gray-400 line-through decoration-gray-300">₹{Number(product.compare_price).toLocaleString('en-IN')}</p>
                                     <span className="bg-red-50 text-red-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
                                         {Math.round(((product.compare_price - product.price) / product.compare_price) * 100)}% OFF
                                     </span>
@@ -380,18 +412,18 @@ const ProductDetails = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => { addToCart(product); setDrawerOpen(true); }}
-                        className="group w-full bg-black text-white py-5 rounded-full font-bold text-sm tracking-[0.2em] uppercase transition-all hover:bg-gray-800 flex items-center justify-center gap-3 transform shadow-xl shadow-black/10 mt-8"
+                        className="group w-full bg-black text-white py-4 md:py-5 rounded-full font-bold text-xs md:text-sm tracking-[0.2em] uppercase transition-all hover:bg-gray-800 flex items-center justify-center gap-3 transform shadow-xl shadow-black/10 mt-8"
                     >
                         ADD TO CART <ShoppingBag size={18} />
                     </motion.button>
 
-                    <div className="grid grid-cols-3 gap-4 py-8 border-y border-gray-100 my-8">
-                        <ValueProp icon={<Clock size={20} />} label="2 Minute Assembly" />
-                        <ValueProp icon={<Truck size={20} />} label="Fast Free Shipping" />
-                        <ValueProp icon={<ShieldCheck size={20} />} label="No-Hassle Returns" />
+                    <div className="grid grid-cols-3 gap-2 md:gap-4 py-8 border-y border-gray-100 my-8">
+                        <ValueProp icon={<Clock size={18} />} label="2 Min Assembly" />
+                        <ValueProp icon={<Truck size={18} />} label="Fast Free Shipping" />
+                        <ValueProp icon={<ShieldCheck size={18} />} label="No-Hassle Returns" />
                     </div>
 
-                    <div className="pt-4">
+                    <div className="pt-4 space-y-1">
                         {product.highlights && (
                             <ProductAccordion
                                 title="Product Highlights"
@@ -412,7 +444,8 @@ const ProductDetails = () => {
             </div>
 
             <div className="w-full">
-                {renderBeautifulStory(product.description)}
+                {/* Updated function call to pass product.dimensions */}
+                {renderBeautifulStory(product.description, product.images, product.dimensions)}
             </div>
 
             <motion.section
@@ -420,7 +453,7 @@ const ProductDetails = () => {
                 whileInView="animate"
                 viewport={{ once: true }}
                 variants={staggerContainer}
-                className="py-24 border-t border-gray-100"
+                className="py-16 md:py-24 border-t border-gray-100"
             >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <FeatureCard icon={<Clock />} title="2-Minute Assembly" desc="Ditch the hex keys. Our smart joinery takes you from flat-pack to rock-solid in under two minutes." />
@@ -429,9 +462,9 @@ const ProductDetails = () => {
                 </div>
             </motion.section>
 
-            <section className="py-32 max-w-4xl mx-auto px-6">
+            <section className="py-20 md:py-32 max-w-4xl mx-auto px-6">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl font-serif mb-4 text-black">Got questions?</h2>
+                    <h2 className="text-3xl md:text-4xl font-serif mb-4 text-black">Got questions?</h2>
                     <p className="text-gray-500 tracking-widest uppercase text-xs font-bold">We got answers</p>
                 </div>
                 <div className="space-y-4">
@@ -440,13 +473,13 @@ const ProductDetails = () => {
                 </div>
             </section>
 
-            <section className="py-24 border-t border-gray-100">
+            <section className="py-16 md:py-24 border-t border-gray-100">
                 <div className="flex items-center gap-4 mb-12">
                     <h2 className="text-2xl font-serif text-black">Recommended</h2>
                     <span className="text-gray-400">|</span>
-                    <p className="text-sm text-gray-500">You may also <span className="font-bold text-black">like</span> these products</p>
+                    <p className="text-sm text-gray-500">You may also <span className="font-bold text-black">like</span> these</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                     {recLoading ? [...Array(4)].map((_, i) => (<div key={i} className="animate-pulse"><div className="aspect-square bg-gray-100 rounded-[2rem] mb-4" /><div className="h-4 bg-gray-100 rounded w-2/3" /></div>)) : (
                         recommended.map((item) => (
                             <motion.div whileHover={{ y: -10 }} key={item.id}>
@@ -476,16 +509,16 @@ const ProductDetails = () => {
 
 /* HELPER COMPONENTS */
 const ValueProp = ({ icon, label }) => (
-    <motion.div variants={fadeInUp} className="flex flex-col items-center text-center gap-3 group">
-        <div className="w-11 h-11 rounded-full border border-gray-100 flex items-center justify-center text-gray-900 transition-colors group-hover:border-black">{icon}</div>
-        <span className="text-[10px] font-bold uppercase tracking-[0.15em] leading-tight text-gray-800">{label}</span>
+    <motion.div variants={fadeInUp} className="flex flex-col items-center text-center gap-2 group">
+        <div className="w-10 h-10 md:w-11 md:h-11 rounded-full border border-gray-100 flex items-center justify-center text-gray-900 transition-colors group-hover:border-black">{icon}</div>
+        <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-[0.1em] leading-tight text-gray-800">{label}</span>
     </motion.div>
 )
 
 const ProductAccordion = ({ title, children, isOpen, onClick }) => (
     <div className="border-b border-gray-100">
         <button onClick={onClick} className="w-full py-5 flex items-center justify-between text-left group">
-            <span className="text-base font-bold uppercase tracking-wide text-black group-hover:text-gray-500 transition-colors">{title}</span>
+            <span className="text-sm md:text-base font-bold uppercase tracking-wide text-black group-hover:text-gray-500 transition-colors">{title}</span>
             {isOpen ? <Minus size={18} className="text-black" /> : <Plus size={18} className="text-gray-400" />}
         </button>
         <AnimatePresence initial={false}>
@@ -507,7 +540,7 @@ const ProductAccordion = ({ title, children, isOpen, onClick }) => (
 const FeatureCard = ({ icon, title, desc }) => (
     <motion.div
         variants={fadeInUp}
-        className="bg-white p-10 rounded-[2rem] border border-gray-50 text-center shadow-sm hover:shadow-lg transition-all duration-500"
+        className="bg-white p-8 md:p-10 rounded-[2rem] border border-gray-50 text-center shadow-sm hover:shadow-lg transition-all duration-500"
     >
         <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-400 group-hover:text-black transition-colors">{icon}</div>
         <h3 className="text-lg font-bold mb-4 text-black">{title}</h3>
@@ -517,7 +550,7 @@ const FeatureCard = ({ icon, title, desc }) => (
 
 const FAQItem = ({ q, a, isOpen, onClick }) => (
     <div className="border-b border-gray-100">
-        <button onClick={onClick} className="w-full py-6 flex items-center gap-6 text-left font-bold text-lg group text-black">
+        <button onClick={onClick} className="w-full py-6 flex items-center gap-6 text-left font-bold text-base md:text-lg group text-black">
             <div className="flex-shrink-0">{isOpen ? <Minus size={18} /> : <Plus size={18} className="text-gray-400 group-hover:text-black transition-colors" />}</div>
             {q}
         </button>
@@ -529,7 +562,7 @@ const FAQItem = ({ q, a, isOpen, onClick }) => (
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                 >
-                    <p className="pl-10 text-gray-600 leading-relaxed max-w-3xl pb-8">{a}</p>
+                    <p className="pl-10 text-gray-600 leading-relaxed max-w-3xl pb-8 text-sm md:text-base">{a}</p>
                 </motion.div>
             )}
         </AnimatePresence>

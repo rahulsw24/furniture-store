@@ -23,7 +23,7 @@ const promises = [
     {
         id: 4,
         icon: <Star size={40} strokeWidth={1} className="text-black" />,
-        title: 'Made in the USA',
+        title: 'Made in India',
         // Note: I reverted "India" back to "USA" to match the screenshot text exactly as well
         description: 'All of our products are designed and crafted in our California studio.',
     },
