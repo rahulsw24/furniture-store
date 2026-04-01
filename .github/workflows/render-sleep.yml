@@ -1,0 +1,33 @@
+name: Render Sleep/Wake Scheduler
+
+on:
+  schedule:
+    # Wake at 10:00 AM IST (04:30 UTC)
+    - cron: '30 4 * * *'
+
+    # Sleep at 12:00 AM IST (18:30 UTC)
+    - cron: '30 18 * * *'
+
+jobs:
+  control-service:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide action
+        run: |
+          HOUR=$(date -u +"%H")
+          MIN=$(date -u +"%M")
+
+          if [[ "$HOUR" == "04" && "$MIN" == "30" ]]; then
+            ACTION="resume"
+          elif [[ "$HOUR" == "18" && "$MIN" == "30" ]]; then
+            ACTION="suspend"
+          else
+            echo "Not scheduled time"
+            exit 0
+          fi
+
+          echo "Action: $ACTION"
+
+          curl -X POST https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/$ACTION \
+          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}"
