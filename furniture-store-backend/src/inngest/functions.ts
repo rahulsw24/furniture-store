@@ -430,7 +430,7 @@ export const handleOrderCreated = inngest.createFunction(
       })
 
       await payload.sendEmail({
-        to: 'contentrs2407@gmail.com',
+        to: 'team@boltless.in',
         subject: `🚨 NEW ORDER - #${doc.order_number}`,
         attachments,
         html: generateAdminOrderEmailHtml(doc),

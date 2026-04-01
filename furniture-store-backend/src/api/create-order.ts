@@ -1,4 +1,10 @@
 import { PayloadHandler } from 'payload'
+import Razorpay from 'razorpay'
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+})
 
 export const createOrder: PayloadHandler = async (req) => {
   const body = req.json ? await req.json() : (req as any).body
@@ -33,34 +39,24 @@ export const createOrder: PayloadHandler = async (req) => {
     stockUpdates.push({ id: product.id, newStock: product.stock - item.quantity })
   }
 
-  // 2. Re-validate Coupon on Backend
+  // 2. Re-validate Coupon
   let finalDiscount = 0
   let couponId = null
-
   if (coupon_code) {
     const couponResult = await req.payload.find({
       collection: 'coupons',
-      where: {
-        code: { equals: coupon_code },
-        is_active: { equals: true },
-      },
+      where: { code: { equals: coupon_code }, is_active: { equals: true } },
     })
-
     const coupon = couponResult.docs[0]
-
     if (coupon) {
-      // Basic validation checks (matching your validate-coupon logic)
       const isExpired = coupon.expires_at && new Date(coupon.expires_at) < new Date()
       const minMet = !coupon.min_order || subtotal >= coupon.min_order
       const limitOk = !coupon.usage_limit || (coupon.used_count || 0) < coupon.usage_limit
 
       if (!isExpired && minMet && limitOk) {
         couponId = coupon.id
-        if (coupon.type === 'percentage') {
-          finalDiscount = subtotal * (coupon.value / 100)
-        } else {
-          finalDiscount = coupon.value
-        }
+        finalDiscount =
+          coupon.type === 'percentage' ? subtotal * (coupon.value / 100) : coupon.value
         finalDiscount = Math.min(finalDiscount, subtotal)
       }
     }
@@ -68,10 +64,27 @@ export const createOrder: PayloadHandler = async (req) => {
 
   const finalTotal = subtotal - finalDiscount
 
-  // 3. Create Order
+  // --- 3. Razorpay Order Generation ---
+  let razorpayOrderId = null
+  if (rest.payment_method === 'razorpay') {
+    try {
+      const rzpOrder = await razorpay.orders.create({
+        amount: Math.round(finalTotal * 100),
+        currency: 'INR',
+        receipt: `receipt_${Date.now()}`,
+      })
+      razorpayOrderId = rzpOrder.id
+    } catch (err) {
+      console.error('Razorpay Order Creation Failed:', err)
+      return Response.json({ error: 'Failed to initiate payment gateway.' }, { status: 500 })
+    }
+  }
+
+  // 4. Create Order in DB
   const year = new Date().getFullYear()
   const count = await req.payload.count({ collection: 'orders' })
-  const newOrderNumber = `BLT-${year}-${(count.totalDocs + 1).toString().padStart(4, '0')}-${Math.random().toString(36).substring(7).toUpperCase()}`
+  const newOrderNumber = `BLT-${year}-${(count.totalDocs + 1).toString().padStart(4, '0')}`
+
   const order = await req.payload.create({
     collection: 'orders',
     data: {
@@ -81,26 +94,34 @@ export const createOrder: PayloadHandler = async (req) => {
       subtotal,
       discount: finalDiscount,
       total: finalTotal,
-      coupon: couponId, // Link order to coupon for tracking
+      coupon: couponId,
+      payment_details: {
+        razorpay_order_id: razorpayOrderId,
+      },
+      payment_status: 'pending',
     },
   })
 
-  // 4. Post-Order Processing: Update Stock & Coupon Count
-  for (const update of stockUpdates) {
-    await req.payload.update({
-      collection: 'products',
-      id: update.id,
-      data: { stock: update.newStock },
-    })
-  }
+  // --- 5. Conditional Fulfillment (Option B) ---
+  // Only process stock and coupon count immediately if it's COD.
+  // For Razorpay, the Webhook will handle this after payment is verified.
+  if (rest.payment_method === 'cod') {
+    for (const update of stockUpdates) {
+      await req.payload.update({
+        collection: 'products',
+        id: update.id,
+        data: { stock: update.newStock },
+      })
+    }
 
-  if (couponId) {
-    const coupon = await req.payload.findByID({ collection: 'coupons', id: couponId })
-    await req.payload.update({
-      collection: 'coupons',
-      id: couponId,
-      data: { used_count: (coupon.used_count || 0) + 1 },
-    })
+    if (couponId) {
+      const coupon = await req.payload.findByID({ collection: 'coupons', id: couponId })
+      await req.payload.update({
+        collection: 'coupons',
+        id: couponId,
+        data: { used_count: (coupon.used_count || 0) + 1 },
+      })
+    }
   }
 
   return Response.json(order)

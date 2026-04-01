@@ -185,6 +185,14 @@ export const Orders: CollectionConfig = {
       required: false,
     },
     {
+      name: 'coupon',
+      type: 'relationship',
+      relationTo: 'coupons',
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
       name: 'customer_email',
       type: 'email',
       required: true,
@@ -210,6 +218,8 @@ export const Orders: CollectionConfig = {
           relationTo: 'products',
           required: true,
         },
+        // Inside Orders collection fields array:
+
         {
           name: 'product_name',
           type: 'text',
@@ -286,6 +296,8 @@ export const Orders: CollectionConfig = {
         { name: 'razorpay_order_id', type: 'text' },
         { name: 'razorpay_payment_id', type: 'text' },
         { name: 'razorpay_signature', type: 'text' },
+        { name: 'failure_reason', type: 'text' }, // 👈 Add this
+        { name: 'error_code', type: 'text' },
       ],
     },
     {

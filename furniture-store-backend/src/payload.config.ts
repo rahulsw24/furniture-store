@@ -19,6 +19,8 @@ import { BusinessSettings } from '../src/collections/Settings'
 import { Subscribers } from './collections/Subscribers'
 import { syncSupabaseUser } from './api/sync-supabase'
 import { PromoBar } from './collections/PromoBar'
+import { razorpayWebhook } from './api/razorpay-webhook'
+import brevoAdapter from './utils/brevoAdapter'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -34,19 +36,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  email: nodemailerAdapter({
-    defaultFromAddress: 'team@boltless.in',
-    defaultFromName: 'BoltLess Furniture Store',
-    transportOptions: {
-      host: 'smtp-relay.brevo.com',
-      port: 587,
-      auth: {
-        user: 'a462b0001@smtp-brevo.com',
-        pass: 'sZPcMyGQSgjFT9mW', // Tip: Move this to process.env.SMTP_PASS for security!
-      },
-      // ADD THIS to see why the handshake is failing in logs
-    },
-  }),
+  email: brevoAdapter(),
   collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries, Subscribers],
   globals: [BusinessSettings, PromoBar],
   editor: lexicalEditor(),
@@ -87,6 +77,8 @@ export default buildConfig({
     { path: '/validate-coupon', method: 'post', handler: validateCoupon },
     // ADD THIS LINE
     { path: '/sync-supabase', method: 'post', handler: syncSupabaseUser },
+    // ADD THIS LINE
+    { path: '/razorpay-webhook', method: 'post', handler: razorpayWebhook },
   ],
   plugins: [],
 
