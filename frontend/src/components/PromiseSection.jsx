@@ -12,7 +12,7 @@ const promises = [
         id: 2,
         icon: <Truck size={40} strokeWidth={1} className="text-black" />,
         title: 'Fast Shipping',
-        description: 'We get all orders out within 1-3 business days.',
+        description: 'We get all orders out within 1-5 business days.',
     },
     {
         id: 3,
@@ -25,7 +25,7 @@ const promises = [
         icon: <Star size={40} strokeWidth={1} className="text-black" />,
         title: 'Made in India',
         // Note: I reverted "India" back to "USA" to match the screenshot text exactly as well
-        description: 'All of our products are designed and crafted in our California studio.',
+        description: 'All of our products are designed and crafted in our India studio.',
     },
 ];
 

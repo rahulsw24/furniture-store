@@ -13,7 +13,7 @@ const Home = () => (
         <Hero />
         <ProductGrid />
         <TrustSection />
-        <VideoCarousel />
+        {/* <VideoCarousel /> */}
         <ReviewsSection />
         <PromiseSection />
         <CombinedSections />

@@ -279,7 +279,7 @@ const Checkout = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <PaymentCard
                                     active={paymentMethod === 'razorpay'}
-                                    comingSoon
+                                    onClick={() => setPaymentMethod('razorpay')}
                                     icon={<CreditCard size={18} />}
                                     title="Online Payment"
                                     desc="UPI, Cards, Netbanking"
@@ -404,7 +404,7 @@ const Checkout = () => {
                             </div>
 
                             <button form="checkout-form" type="submit" disabled={isPlacingOrder} className="w-full bg-black text-white py-5 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-xl shadow-black/10 mt-10 flex items-center justify-center gap-3 disabled:opacity-50">
-                                {isPlacingOrder ? <>PROCESSING <Loader2 size={14} className="animate-spin" /></> : "Place Order (COD)"}
+                                {isPlacingOrder ? <>PROCESSING <Loader2 size={14} className="animate-spin" /></> : paymentMethod === 'razorpay' ? "Proceed to Payment" : "Place Order (COD)"}
                             </button>
                         </div>
                     </div>

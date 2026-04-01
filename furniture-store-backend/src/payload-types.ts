@@ -254,6 +254,7 @@ export interface Product {
 export interface Order {
   id: number;
   user?: (number | null) | User;
+  coupon?: (number | null) | Coupon;
   customer_email: string;
   customer_phone?: string | null;
   order_number?: string | null;
@@ -278,6 +279,8 @@ export interface Order {
     razorpay_order_id?: string | null;
     razorpay_payment_id?: string | null;
     razorpay_signature?: string | null;
+    failure_reason?: string | null;
+    error_code?: string | null;
   };
   order_status?:
     | ('pending' | 'confirmed' | 'processing' | 'shipped' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'returned')
@@ -541,6 +544,7 @@ export interface ProductsSelect<T extends boolean = true> {
  */
 export interface OrdersSelect<T extends boolean = true> {
   user?: T;
+  coupon?: T;
   customer_email?: T;
   customer_phone?: T;
   order_number?: T;
@@ -569,6 +573,8 @@ export interface OrdersSelect<T extends boolean = true> {
         razorpay_order_id?: T;
         razorpay_payment_id?: T;
         razorpay_signature?: T;
+        failure_reason?: T;
+        error_code?: T;
       };
   order_status?: T;
   shipping_address?:
