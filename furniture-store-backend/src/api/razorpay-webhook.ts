@@ -1,11 +1,10 @@
 import { PayloadHandler } from 'payload'
 import crypto from 'crypto'
+import { inngest } from '@/inngest/client'
 
 export const razorpayWebhook: PayloadHandler = async (req) => {
   console.log('--- Razorpay Webhook Received ---')
 
-  // 1. Get the RAW body for accurate signature verification
-  // We cast to 'any' or 'Request' to tell TypeScript we know this method exists
   const rawBody = await (req as any).text()
   const signature = req.headers.get('x-razorpay-signature')
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET!
@@ -15,7 +14,6 @@ export const razorpayWebhook: PayloadHandler = async (req) => {
     return new Response('No signature provided', { status: 400 })
   }
 
-  // 2. Verify the signature
   const expectedSignature = crypto.createHmac('sha256', secret).update(rawBody).digest('hex')
 
   if (signature !== expectedSignature) {
@@ -23,14 +21,10 @@ export const razorpayWebhook: PayloadHandler = async (req) => {
     return new Response('Invalid signature', { status: 400 })
   }
 
-  // Parse the body after verification
   const body = JSON.parse(rawBody)
   const event = body.event
   const payload = body.payload
 
-  console.log(`Processing Event: ${event}`)
-
-  // Find the Order in Payload
   const razorpayOrderId = payload.payment.entity.order_id || payload.order?.entity?.id
 
   const orderResult = await req.payload.find({
@@ -47,31 +41,49 @@ export const razorpayWebhook: PayloadHandler = async (req) => {
     return new Response('Order not found', { status: 404 })
   }
 
-  // 3. Handle "Payment Captured" (Success)
+  // 3. Handle Success Events
   if (event === 'payment.captured' || event === 'order.paid') {
     const razorpayPaymentId = payload.payment.entity.id
 
-    // Skip if already processed
     if (order.payment_status === 'paid') {
       return new Response('OK', { status: 200 })
     }
 
-    // A. Update Stock
+    /* ---------- ✅ UPDATED: VARIANT AWARE STOCK LOGIC ---------- */
     for (const item of order.items) {
       const productId = typeof item.product === 'object' ? item.product.id : item.product
+
       const product = await req.payload.findByID({
         collection: 'products',
         id: productId,
       })
 
-      if (product) {
+      if (!product) continue
+
+      if (product.product_type === 'variable' && item.variantId) {
+        // Find the specific variant in the product's variants array
+        const variants = product.variants || []
+        const updatedVariants = variants.map((v: any) =>
+          v.id === item.variantId
+            ? { ...v, stock: Math.max(0, (v.stock || 0) - item.quantity) }
+            : v,
+        )
+
         await req.payload.update({
           collection: 'products',
-          id: product.id,
-          data: { stock: Math.max(0, product.stock - item.quantity) },
+          id: productId,
+          data: { variants: updatedVariants },
+        })
+      } else {
+        // Standard logic for simple products
+        await req.payload.update({
+          collection: 'products',
+          id: productId,
+          data: { stock: Math.max(0, (product.stock || 0) - item.quantity) },
         })
       }
     }
+    /* --------------------------------------------------------- */
 
     // B. Increment Coupon Usage
     if (order.coupon) {
@@ -98,10 +110,17 @@ export const razorpayWebhook: PayloadHandler = async (req) => {
       },
     })
 
+    await inngest
+      .send({
+        name: 'order.paid',
+        data: { orderId: order.id },
+      })
+      .catch((err) => console.error('Inngest order.paid failed:', err))
+
     console.log(`✅ Order #${order.order_number} fulfilled via Webhook.`)
   }
 
-  // 4. Handle "Payment Failed"
+  // 4. Handle Payment Failed
   else if (event === 'payment.failed') {
     const errorDescription = payload.payment.entity.error_description
     const errorCode = payload.payment.entity.error_code

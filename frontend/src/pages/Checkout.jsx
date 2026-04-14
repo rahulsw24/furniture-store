@@ -64,9 +64,24 @@ const Checkout = () => {
     useEffect(() => {
         const fetchCoupons = async () => {
             try {
+                // 1. Fetch all active coupons from the API
                 const res = await fetch(`${API_URL}/api/coupons?where[is_active][equals]=true`)
                 const data = await res.json()
-                setAvailableCoupons(data.docs || [])
+
+                const now = new Date()
+
+                // 2. Filter for Validity in JavaScript
+                const validCoupons = (data.docs || []).filter(coupon => {
+                    // Check Expiry: Valid if no expiry date OR expiry is in the future
+                    const isNotExpired = !coupon.expires_at || new Date(coupon.expires_at) > now
+
+                    // Check Usage: Valid if no limit OR used count is below limit
+                    const hasUsageLeft = !coupon.usage_limit || (coupon.used_count || 0) < coupon.usage_limit
+
+                    return isNotExpired && hasUsageLeft
+                })
+
+                setAvailableCoupons(validCoupons)
             } catch (err) {
                 console.error("Failed to fetch coupons", err)
             }
@@ -147,9 +162,13 @@ const Checkout = () => {
         setIsPlacingOrder(true)
 
         try {
+            // 1. Map items to include variantId and concatenated names for the database/email
             const items = detailedCart.map(item => ({
                 product: item.id,
-                product_name: item.name,
+                variantId: item.variantId || null, // ✅ Critical: Matches your updated Order Schema
+                product_name: item.variantLabel
+                    ? `${item.name} (${item.variantLabel})`
+                    : item.name,
                 product_image: item.images?.[0]?.url || "",
                 quantity: item.quantity,
                 unit_price: item.currentPrice || item.price,
@@ -187,6 +206,7 @@ const Checkout = () => {
 
             const orderDoc = data.doc || data;
 
+            // 2. Handle Payment logic
             if (paymentMethod === "razorpay") {
                 const isLoaded = await loadRazorpayScript()
                 if (!isLoaded) {
@@ -197,7 +217,7 @@ const Checkout = () => {
 
                 const options = {
                     key: RAZORPAY_KEY_ID,
-                    amount: finalTotal * 100,
+                    amount: Math.round(finalTotal * 100), // ✅ Math.round prevents decimal precision bugs
                     currency: "INR",
                     name: "BOLTLESS",
                     description: `Order #${orderDoc.order_number}`,
@@ -205,7 +225,8 @@ const Checkout = () => {
                     order_id: orderDoc.payment_details?.razorpay_order_id,
                     handler: async (response) => {
                         clearCart()
-                        navigate(`/order-success/${orderDoc.id}`)
+                        // ✅ Redirect using branded Order Number (e.g., BLT-2026-0041)
+                        navigate(`/order-success/${orderDoc.order_number}`)
                     },
                     prefill: {
                         name: form.full_name,
@@ -219,8 +240,10 @@ const Checkout = () => {
                 rzp.open()
                 setIsPlacingOrder(false)
             } else {
+                // COD Flow
                 clearCart()
-                navigate(`/order-success/${orderDoc.id}`)
+                // ✅ Redirect using branded Order Number
+                navigate(`/order-success/${orderDoc.order_number}`)
             }
         } catch (err) {
             console.error(err)
@@ -371,10 +394,40 @@ const Checkout = () => {
                                             />
                                             <button onClick={() => applyCoupon()} disabled={!couponCode || isApplying} className="bg-black text-white px-6 rounded-full text-[10px] font-bold uppercase tracking-widest disabled:opacity-30">Apply</button>
                                         </div>
-                                        <button onClick={() => setShowOffers(!showOffers)} className="w-full py-3 px-6 bg-white border border-gray-100 rounded-2xl flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-all group">
-                                            <span className="flex items-center gap-2"><Ticket size={14} className="text-gray-400 group-hover:text-black" /> View Available Offers</span>
-                                            <ChevronRight size={14} className={`${showOffers ? 'rotate-90' : ''} transition-transform`} />
-                                        </button>
+                                        <div className="space-y-2">
+                                            <button onClick={() => setShowOffers(!showOffers)} className="w-full py-3 px-6 bg-white border border-gray-100 rounded-2xl flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-black transition-all group">
+                                                <span className="flex items-center gap-2"><Ticket size={14} className="text-gray-400 group-hover:text-black" /> View Available Offers</span>
+                                                <ChevronRight size={14} className={`${showOffers ? 'rotate-90' : ''} transition-transform`} />
+                                            </button>
+
+                                            {showOffers && (
+                                                <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                                    {availableCoupons.length > 0 ? (
+                                                        availableCoupons.map((coupon) => (
+                                                            <div
+                                                                key={coupon.id}
+                                                                onClick={() => applyCoupon(coupon.code)}
+                                                                className="cursor-pointer bg-white p-4 rounded-2xl border border-gray-100 hover:border-black transition-all group"
+                                                            >
+                                                                <div className="flex justify-between items-center">
+                                                                    <div>
+                                                                        <p className="text-[11px] font-black text-black tracking-widest">{coupon.code}</p>
+                                                                        <p className="text-[9px] text-gray-400 font-bold uppercase mt-1">
+                                                                            {coupon.type === 'percentage' ? `${coupon.value}% OFF` : `₹${coupon.value} OFF`}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
+                                                                        <Plus size={12} />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <p className="text-center text-[10px] text-gray-400 font-bold uppercase py-2">No active offers found</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>

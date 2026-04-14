@@ -151,12 +151,12 @@ export const Orders: CollectionConfig = {
       async ({ doc, previousDoc, operation }) => {
         // CASE 1: NEW ORDER
         if (operation === 'create') {
-          await inngest
-            .send({
-              name: 'order.created',
-              data: { orderId: doc.id },
-            })
-            .catch((err) => console.error('Inngest order.created failed:', err))
+          // If it's COD, we can treat it as 'paid' or 'confirmed' immediately
+          if (doc.payment_method === 'cod') {
+            await inngest.send({ name: 'order.paid', data: { orderId: doc.id } })
+          }
+          // For online payments, we stay SILENT here.
+          // The Webhook will handle the trigger once the money arrives.
         }
 
         // CASE 2: STATUS UPDATE
@@ -229,6 +229,7 @@ export const Orders: CollectionConfig = {
           name: 'product_image',
           type: 'text',
         },
+        { name: 'variantId', type: 'text' }, // ✅ ADD THIS LINE
         {
           name: 'quantity',
           type: 'number',

@@ -21,6 +21,7 @@ import { syncSupabaseUser } from './api/sync-supabase'
 import { PromoBar } from './collections/PromoBar'
 import { razorpayWebhook } from './api/razorpay-webhook'
 import brevoAdapter from './utils/brevoAdapter'
+import { VariationTypes } from './collections/VariationTypes'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -37,7 +38,17 @@ export default buildConfig({
     },
   },
   email: brevoAdapter(),
-  collections: [Users, Media, Categories, Products, Orders, Coupons, Inquiries, Subscribers],
+  collections: [
+    Users,
+    Media,
+    Categories,
+    Products,
+    Orders,
+    Coupons,
+    Inquiries,
+    Subscribers,
+    VariationTypes,
+  ],
   globals: [BusinessSettings, PromoBar],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET!,

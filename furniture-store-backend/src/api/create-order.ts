@@ -16,27 +16,55 @@ export const createOrder: PayloadHandler = async (req) => {
 
   // 1. Validate Products & Stock
   for (const item of items) {
+    const orderItem = item as any
+
     const product = await req.payload.findByID({
       collection: 'products',
-      id: item.product,
+      id: orderItem.product,
     })
 
-    if (!product || product.stock < item.quantity) {
-      return Response.json(
-        { error: `Insufficient stock for ${product?.name || 'item'}` },
-        { status: 400 },
+    if (!product) return Response.json({ error: `Product not found` }, { status: 400 })
+
+    // ✅ NEW: SECURITY FIX - Get the real price from DB, don't trust frontend
+    let correctPrice = product.price
+
+    if (product.product_type === 'variable' && orderItem.variantId) {
+      const variants = product.variants || []
+      const variant = variants.find((v: any) => v.id === orderItem.variantId)
+
+      if (!variant || (variant.stock || 0) < orderItem.quantity) {
+        return Response.json({ error: `Insufficient stock for ${product.name}` }, { status: 400 })
+      }
+
+      correctPrice = variant.price // Use the variant's real price
+
+      const updatedVariants = variants.map((v: any) =>
+        v.id === orderItem.variantId ? { ...v, stock: (v.stock || 0) - orderItem.quantity } : v,
       )
+
+      stockUpdates.push({ id: product.id, data: { variants: updatedVariants } })
+    } else {
+      const currentStock = product.stock || 0
+      if (currentStock < orderItem.quantity) {
+        return Response.json({ error: `Insufficient stock` }, { status: 400 })
+      }
+      stockUpdates.push({ id: product.id, data: { stock: currentStock - orderItem.quantity } })
     }
 
-    const itemSubtotal = product.price * item.quantity
+    // ✅ Calculate subtotal using correctPrice from DB
+    const itemSubtotal = correctPrice * orderItem.quantity
+
     validatedItems.push({
-      ...item,
-      unit_price: product.price,
+      product: orderItem.product,
+      variantId: orderItem.variantId || null,
+      product_name: orderItem.product_name,
+      product_image: orderItem.product_image,
+      quantity: orderItem.quantity,
+      unit_price: correctPrice, // Save the REAL price
       subtotal: itemSubtotal,
     })
 
     subtotal += itemSubtotal
-    stockUpdates.push({ id: product.id, newStock: product.stock - item.quantity })
   }
 
   // 2. Re-validate Coupon
@@ -102,24 +130,22 @@ export const createOrder: PayloadHandler = async (req) => {
     },
   })
 
-  // --- 5. Conditional Fulfillment (Option B) ---
-  // Only process stock and coupon count immediately if it's COD.
-  // For Razorpay, the Webhook will handle this after payment is verified.
+  // --- 5. Conditional Fulfillment (COD) ---
   if (rest.payment_method === 'cod') {
     for (const update of stockUpdates) {
       await req.payload.update({
         collection: 'products',
         id: update.id,
-        data: { stock: update.newStock },
+        data: update.data,
       })
     }
 
     if (couponId) {
-      const coupon = await req.payload.findByID({ collection: 'coupons', id: couponId })
+      const couponDoc = await req.payload.findByID({ collection: 'coupons', id: couponId })
       await req.payload.update({
         collection: 'coupons',
         id: couponId,
-        data: { used_count: (coupon.used_count || 0) + 1 },
+        data: { used_count: (couponDoc.used_count || 0) + 1 },
       })
     }
   }

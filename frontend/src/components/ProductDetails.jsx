@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
     Star, Truck, ShieldCheck, Clock, Plus, Minus, Paintbrush, Layers,
@@ -130,15 +130,6 @@ const renderBeautifulStory = (description, productImages, dimensions) => {
                     />
                 </motion.div>
 
-                {/* --- BLUEPRINT VISUALIZER (Commented out as requested) --- */}
-
-                {/* {dimensions && (
-                    <BlueprintVisualizer
-                        dimensionsText={dimensions}
-                        type="chair" 
-                    />
-                )} */}
-
                 {/* --- BODY SECTIONS (Smart Stacking for Mobile, Zig-Zag for Desktop) --- */}
                 {bodySections.length > 0 && (
                     <div className="space-y-32 md:space-y-48 lg:space-y-64">
@@ -160,10 +151,8 @@ const renderBeautifulStory = (description, productImages, dimensions) => {
                                     transition={{ duration: 0.8, ease: "easeOut" }}
                                     className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-24 items-center"
                                 >
-                                    {/* TEXT CONTENT - Stacked order 2 on mobile */}
                                     <div className={`lg:col-span-5 order-2 ${isShifted ? 'lg:col-start-8 lg:order-2' : 'lg:col-start-1 lg:order-1'}`}>
                                         <div className="relative px-4 md:px-0 md:pl-16 group">
-                                            {/* Hide the vertical decorative line on mobile for a cleaner stack */}
                                             <div className="hidden md:block absolute left-0 top-0 bottom-0 w-px bg-gray-200 group-hover:bg-black transition-colors duration-500" />
 
                                             {sectionHeader && (
@@ -177,7 +166,6 @@ const renderBeautifulStory = (description, productImages, dimensions) => {
                                         </div>
                                     </div>
 
-                                    {/* FILLER IMAGE - Stacked order 1 on mobile */}
                                     {sectionImg && (
                                         <div className={`lg:col-span-7 order-1 ${isShifted ? 'lg:col-start-1 lg:order-1' : 'lg:col-start-6 lg:order-2'}`}>
                                             <motion.div
@@ -230,6 +218,10 @@ const ProductDetails = () => {
     const [recommended, setRecommended] = useState([])
     const [recLoading, setRecLoading] = useState(true)
 
+    /* ---------- VARIATION STATES ---------- */
+    const [selectedOptions, setSelectedOptions] = useState({})
+    const [activeVariant, setActiveVariant] = useState(null)
+
     /* ---------- Fetch Main Product ---------- */
     useEffect(() => {
         async function loadProduct() {
@@ -238,6 +230,8 @@ const ProductDetails = () => {
                 const data = await getProductBySlug(slug)
                 setProduct(data)
                 setActiveImgIndex(0)
+                setSelectedOptions({}) // Reset selections for new product
+                setActiveVariant(null)
                 setError(null)
             } catch (err) {
                 console.error(err)
@@ -249,6 +243,43 @@ const ProductDetails = () => {
         loadProduct()
         window.scrollTo(0, 0)
     }, [slug])
+
+    /* ---------- DYNAMIC VARIATION MAPPER ---------- */
+    const variationMap = useMemo(() => {
+        if (!product || product.product_type !== 'variable' || !product.variants) return {}
+
+        const map = {}
+        product.variants.forEach(variant => {
+            variant.selected_options?.forEach(opt => {
+                const typeName = typeof opt.type === 'object' ? opt.type.name : opt.type
+                if (!map[typeName]) map[typeName] = new Set()
+                map[typeName].add(opt.value)
+            })
+        })
+
+        const finalMap = {}
+        Object.keys(map).forEach(key => finalMap[key] = Array.from(map[key]))
+        return finalMap
+    }, [product])
+
+    /* ---------- VARIANT MATCHING ENGINE ---------- */
+    useEffect(() => {
+        if (product?.product_type === 'variable' && product.variants) {
+            const match = product.variants.find(v => {
+                return v.selected_options.every(opt => {
+                    const typeName = typeof opt.type === 'object' ? opt.type.name : opt.type
+                    return selectedOptions[typeName] === opt.value
+                })
+            })
+            setActiveVariant(match || null)
+
+            if (match?.variant_image) {
+                const variantImgUrl = getImageUrl(match.variant_image)
+                const foundIndex = product.images.findIndex(img => getImageUrl(img) === variantImgUrl)
+                if (foundIndex !== -1) setActiveImgIndex(foundIndex)
+            }
+        }
+    }, [selectedOptions, product])
 
     /* ---------- Fetch Recommended ---------- */
     useEffect(() => {
@@ -302,6 +333,9 @@ const ProductDetails = () => {
         ? product.images.map(img => getImageUrl(img))
         : ['https://via.placeholder.com/800x800'];
 
+    const displayPrice = activeVariant ? activeVariant.price : product.price
+    const isSelectionComplete = Object.keys(variationMap).length === Object.keys(selectedOptions).length
+
     const nextImage = (e) => {
         e?.stopPropagation();
         setActiveImgIndex((prev) => (prev + 1) % images.length);
@@ -310,6 +344,19 @@ const ProductDetails = () => {
         e?.stopPropagation();
         setActiveImgIndex((prev) => (prev - 1 + images.length) % images.length);
     };
+
+    const handleAddToCart = () => {
+        if (product.product_type === 'variable' && !activeVariant) return;
+
+        addToCart({
+            ...product,
+            price: displayPrice,
+            variant_id: activeVariant?.id,
+            variant_name: activeVariant?.variant_name,
+            selected_options: selectedOptions
+        });
+        setDrawerOpen(true);
+    }
 
     return (
         <motion.main
@@ -344,7 +391,7 @@ const ProductDetails = () => {
             </AnimatePresence>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20 items-start pt-4 lg:pt-0">
-                {/* GALLERY COLUMN - order-1 on mobile */}
+                {/* GALLERY COLUMN */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -384,7 +431,7 @@ const ProductDetails = () => {
                     </div>
                 </motion.div>
 
-                {/* DETAILS COLUMN - order-2 on mobile */}
+                {/* DETAILS COLUMN */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -396,25 +443,65 @@ const ProductDetails = () => {
                             {product.name}
                         </h1>
                         <div className="flex items-baseline gap-4">
-                            <p className="text-2xl md:text-3xl font-medium text-gray-900">₹{Number(product.price).toLocaleString('en-IN')}</p>
-                            {product.compare_price && Number(product.compare_price) > Number(product.price) && (
+                            <p className="text-2xl md:text-3xl font-medium text-gray-900">₹{Number(displayPrice).toLocaleString('en-IN')}</p>
+                            {product.compare_price && Number(product.compare_price) > Number(displayPrice) && (
                                 <>
                                     <p className="text-lg md:text-xl text-gray-400 line-through decoration-gray-300">₹{Number(product.compare_price).toLocaleString('en-IN')}</p>
                                     <span className="bg-red-50 text-red-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
-                                        {Math.round(((product.compare_price - product.price) / product.compare_price) * 100)}% OFF
+                                        {Math.round(((product.compare_price - displayPrice) / product.compare_price) * 100)}% OFF
                                     </span>
                                 </>
                             )}
                         </div>
                     </div>
 
+                    {/* --- INJECTED VARIATION PICKERS --- */}
+                    {product.product_type === 'variable' && (
+                        <div className="mt-10 space-y-8">
+                            {Object.entries(variationMap).map(([type, values]) => (
+                                <div key={type} className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Select {type}</span>
+                                        {selectedOptions[type] && <span className="text-[10px] font-bold text-black uppercase">{selectedOptions[type]}</span>}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {values.map(val => (
+                                            <button
+                                                key={val}
+                                                onClick={() => setSelectedOptions(prev => ({ ...prev, [type]: val }))}
+                                                className={`px-6 py-3 rounded-full text-xs font-bold transition-all border ${selectedOptions[type] === val
+                                                    ? 'bg-black text-white border-black shadow-lg'
+                                                    : 'bg-white text-gray-600 border-gray-100 hover:border-black'
+                                                    }`}
+                                            >
+                                                {val}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => { addToCart(product); setDrawerOpen(true); }}
-                        className="group w-full bg-black text-white py-4 md:py-5 rounded-full font-bold text-xs md:text-sm tracking-[0.2em] uppercase transition-all hover:bg-gray-800 flex items-center justify-center gap-3 transform shadow-xl shadow-black/10 mt-8"
+                        whileHover={(!isSelectionComplete || (product.product_type === 'variable' && !activeVariant)) ? {} : { scale: 1.02 }}
+                        whileTap={(!isSelectionComplete || (product.product_type === 'variable' && !activeVariant)) ? {} : { scale: 0.98 }}
+                        onClick={handleAddToCart}
+                        disabled={product.product_type === 'variable' && (!isSelectionComplete || !activeVariant)}
+                        className={`group w-full py-4 md:py-5 rounded-full font-bold text-xs md:text-sm tracking-[0.2em] uppercase transition-all flex items-center justify-center gap-3 transform shadow-xl mt-8 ${(product.product_type === 'variable' && (!isSelectionComplete || !activeVariant))
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                            : 'bg-black text-white hover:bg-gray-800 shadow-black/10'
+                            }`}
                     >
-                        ADD TO CART <ShoppingBag size={18} />
+                        {product.product_type === 'variable'
+                            ? (!isSelectionComplete
+                                ? 'Complete Selection'
+                                : activeVariant === null
+                                    ? 'Unavailable Combination'
+                                    : 'ADD TO CART')
+                            : 'ADD TO CART'
+                        }
+                        <ShoppingBag size={18} />
                     </motion.button>
 
                     <div className="grid grid-cols-3 gap-2 md:gap-4 py-8 border-y border-gray-100 my-8">
@@ -444,7 +531,6 @@ const ProductDetails = () => {
             </div>
 
             <div className="w-full">
-                {/* Updated function call to pass product.dimensions */}
                 {renderBeautifulStory(product.description, product.images, product.dimensions)}
             </div>
 
@@ -507,7 +593,7 @@ const ProductDetails = () => {
     )
 }
 
-/* HELPER COMPONENTS */
+/* HELPER COMPONENTS (INTACT) */
 const ValueProp = ({ icon, label }) => (
     <motion.div variants={fadeInUp} className="flex flex-col items-center text-center gap-2 group">
         <div className="w-10 h-10 md:w-11 md:h-11 rounded-full border border-gray-100 flex items-center justify-center text-gray-900 transition-colors group-hover:border-black">{icon}</div>
