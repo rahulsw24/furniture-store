@@ -10,7 +10,9 @@ export async function getAllProducts() {
 }
 
 export async function getProductBySlug(slug) {
-  const res = await fetch(`${API_BASE}/products?where[slug][equals]=${slug}`);
+  const res = await fetch(
+    `${API_BASE}/products?where[slug][equals]=${slug}&depth=4`,
+  );
 
   if (!res.ok) throw new Error("Failed to fetch product");
 

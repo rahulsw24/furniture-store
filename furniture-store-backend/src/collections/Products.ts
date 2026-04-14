@@ -3,14 +3,22 @@ import type { CollectionConfig } from 'payload'
 export const Products: CollectionConfig = {
   slug: 'products',
   access: {
-    read: () => true, // Public can view
-    // Only admins can modify
+    read: ({ req: { user } }) => {
+      if (user?.role === 'admin') return true
+
+      return {
+        is_active: {
+          equals: true,
+        },
+      }
+    },
     create: ({ req: { user } }) => user?.role === 'admin',
     update: ({ req: { user } }) => user?.role === 'admin',
     delete: ({ req: { user } }) => user?.role === 'admin',
   },
   admin: {
     useAsTitle: 'name',
+    defaultColumns: ['name', 'price', 'product_type', 'stock'],
   },
   fields: [
     {
@@ -25,60 +33,120 @@ export const Products: CollectionConfig = {
       unique: true,
     },
     {
+      name: 'product_type',
+      type: 'select',
+      defaultValue: 'simple',
+      options: [
+        { label: 'Simple (Single Item)', value: 'simple' },
+        { label: 'Variable (Multiple Options)', value: 'variable' },
+      ],
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
       name: 'description',
       type: 'textarea',
       required: true,
       admin: {
-        description: 'Use --- to separate story sections. First line of each section is the title.',
+        description: 'Use --- to separate story sections.',
       },
     },
-    // --- NEW AMAZON-STYLE HIGHLIGHTS ---
     {
       name: 'highlights',
       type: 'textarea',
       admin: {
-        description: 'Paste "About this item" bullets here. Use TITLE: Description format.',
-        placeholder: 'MODERN DESIGN: Low-sitting lounge chair with a sculptural silhouette...',
+        description: 'Paste "About this item" bullets here.',
       },
     },
-    // --- TECHNICAL DETAILS GROUP ---
+
+    // --- 1. VARIANTS CONFIGURATION ---
     {
-      type: 'row',
+      name: 'variants',
+      type: 'array',
+      label: 'Product Variants',
+      admin: {
+        condition: (data) => data.product_type === 'variable',
+      },
       fields: [
         {
-          name: 'dimensions',
-          type: 'textarea',
-          admin: {
-            placeholder: 'Width: 48"\nDepth: 24"\nHeight: 18"',
-            description: 'One dimension per line.',
-          },
+          name: 'variant_name',
+          type: 'text',
+          required: true,
+          admin: { placeholder: 'e.g., 3-Tier / 12" Depth / 48" Length' },
         },
         {
-          name: 'materials',
-          type: 'textarea',
+          name: 'selected_options',
+          type: 'array',
+          label: 'Option Values',
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'type',
+                  type: 'relationship', // 🔥 FIXED: Using relationship to Variation Types collection
+                  relationTo: 'variation-types',
+                  required: true,
+                  admin: {
+                    width: '50%',
+                    description: 'Select a variation type (e.g. Length)',
+                  },
+                },
+                {
+                  name: 'value',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    placeholder: 'e.g., 48 inches',
+                    width: '50%',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            { name: 'price', type: 'number', required: true, admin: { width: '50%' } },
+            { name: 'stock', type: 'number', required: true, admin: { width: '50%' } },
+          ],
+        },
+        {
+          name: 'variant_image',
+          type: 'upload',
+          relationTo: 'media',
           admin: {
-            placeholder: 'Premium Birch Plywood\nNatural Wax Finish',
-            description: 'One material per line.',
+            description: 'Optional: Specific image for this variation',
           },
         },
       ],
     },
 
+    // --- 2. GLOBAL SPECS ---
     {
-      name: 'price',
-      type: 'number',
-      required: true,
-      admin: {
-        placeholder: 'Current selling price',
-      },
+      type: 'row',
+      fields: [
+        { name: 'dimensions', type: 'textarea', admin: { placeholder: 'Overall Width: 48"...' } },
+        { name: 'materials', type: 'textarea', admin: { placeholder: 'Premium Birch Plywood...' } },
+      ],
     },
+
+    // --- 3. PRICING ---
     {
-      name: 'compare_price',
-      type: 'number',
-      admin: {
-        placeholder: 'Original/MSRP price',
-        description: 'Leave blank if not on sale',
-      },
+      type: 'row',
+      fields: [
+        {
+          name: 'price',
+          type: 'number',
+          required: true,
+        },
+        {
+          name: 'compare_price',
+          type: 'number',
+        },
+      ],
     },
 
     {
@@ -88,7 +156,6 @@ export const Products: CollectionConfig = {
       hasMany: true,
       required: true,
     },
-
     {
       name: 'category',
       type: 'relationship',
@@ -96,22 +163,17 @@ export const Products: CollectionConfig = {
       required: true,
     },
 
+    // --- 4. STOCK MANAGEMENT ---
     {
       name: 'stock',
       type: 'number',
       required: true,
       defaultValue: 0,
+      admin: {
+        condition: (data) => data.product_type === 'simple',
+      },
     },
-    {
-      name: 'low_stock_threshold',
-      type: 'number',
-      defaultValue: 5,
-    },
-
-    {
-      name: 'is_active',
-      type: 'checkbox',
-      defaultValue: true,
-    },
+    { name: 'low_stock_threshold', type: 'number', defaultValue: 5 },
+    { name: 'is_active', type: 'checkbox', defaultValue: true },
   ],
 }

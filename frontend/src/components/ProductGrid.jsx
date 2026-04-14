@@ -98,9 +98,12 @@ const ProductGrid = () => {
                     ))}
                 </div>
 
-                <button className="inline-block px-12 py-4 border border-black rounded-full text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-black hover:text-white active:scale-95">
+                <Link
+                    to="/products"
+                    className="inline-block px-12 py-4 border border-black rounded-full text-xs font-bold uppercase tracking-[0.2em] transition-all hover:bg-black hover:text-white active:scale-95 text-center"
+                >
                     View all products
-                </button>
+                </Link>
             </div>
         </section>
     )

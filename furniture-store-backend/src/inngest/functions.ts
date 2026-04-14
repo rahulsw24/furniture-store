@@ -57,7 +57,51 @@ const BRAND_FOOTER = `
     </td>
   </tr>
 `
+function generateInquiryEmailHtml(doc: any, isInternal: boolean) {
+  const title = isInternal ? 'New Inquiry Received' : 'We’ve Received Your Message'
+  const subtext = isInternal
+    ? `A new inquiry has been submitted via the BoltLess contact form.`
+    : `Hello ${doc.name}, thank you for reaching out. Our team has received your message and will get back to you shortly.`
 
+  return `
+    <!DOCTYPE html>
+    <html>
+    <body style="margin: 0; padding: 0; background-color: #FFFFFF;">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF">
+        <tr>
+          <td align="center" style="padding: 20px;">
+            <table width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%;">
+              ${BRAND_HEADER}
+              <tr>
+                <td style="padding-bottom: 40px;">
+                  <h1 style="font-family: 'Georgia', serif; font-size: 28px; color: #1A1A1A; margin: 0 0 16px 0; font-weight: 400; font-style: italic;">${title}</h1>
+                  <p style="font-family: 'Helvetica', Arial, sans-serif; font-size: 15px; color: #666666; line-height: 1.6; margin: 0;">${subtext}</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F9F9F7" style="border-radius: 4px; border-left: 4px solid #000000;">
+                    <tr>
+                      <td style="padding: 30px;">
+                        <div style="font-family: 'Helvetica', sans-serif; font-size: 10px; font-weight: 900; color: #999999; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px;">Message Details</div>
+                        <div style="font-family: 'Helvetica', sans-serif; font-size: 14px; color: #1A1A1A; line-height: 1.6;">
+                          <strong>From:</strong> ${doc.name} (${doc.email})<br/><br/>
+                          "${doc.message}"
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              ${BRAND_FOOTER}
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `
+}
 // Helper to generate the premium Order Status/Confirmation HTML
 function generateOrderEmailHtml(doc: any, message: string) {
   const itemsHtml = doc.items
@@ -69,7 +113,18 @@ function generateOrderEmailHtml(doc: any, message: string) {
           <tr>
             <td align="left" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 13px; font-weight: 700; color: #000000; text-transform: uppercase; letter-spacing: 1px; line-height: 1.4;">
               ${item.product_name}
-              <div style="font-size: 11px; color: #999999; margin-top: 4px; font-weight: 400; text-transform: none; letter-spacing: 0;">Quantity: ${item.quantity}</div>
+              
+              ${
+                item.variant_name || item.variantLabel
+                  ? `<div style="font-size: 9px; color: #999999; margin-top: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                      ${item.variant_name || item.variantLabel}
+                    </div>`
+                  : ''
+              }
+
+              <div style="font-size: 11px; color: #999999; margin-top: 6px; font-weight: 400; text-transform: none; letter-spacing: 0;">
+                Quantity: ${item.quantity}
+              </div>
             </td>
             <td align="right" valign="top" style="font-family: 'Helvetica', Arial, sans-serif; font-size: 13px; font-weight: 700; color: #000000;">
               ₹${item.subtotal.toLocaleString('en-IN')}
@@ -133,7 +188,7 @@ function generateOrderEmailHtml(doc: any, message: string) {
                     </tr>
                     <tr>
                       <td width="70%" align="left" style="padding: 10px 0; font-family: 'Helvetica', sans-serif; font-size: 12px; color: #999999; text-transform: uppercase; letter-spacing: 1.5px;">Shipping</td>
-                      <td width="30%" align="right" style="padding: 10px 0; font-family: 'Helvetica', sans-serif; font-size: 13px; color: #000000; font-weight: 700;">₹${doc.shipping_cost.toLocaleString('en-IN')}</td>
+                      <td width="30%" align="right" style="padding: 10px 0; font-family: 'Helvetica', sans-serif; font-size: 13px; color: #000000; font-weight: 700;">₹${(doc.shipping_cost || 0).toLocaleString('en-IN')}</td>
                     </tr>
                     
                     <tr>
@@ -168,6 +223,14 @@ function generateAdminOrderEmailHtml(doc: any) {
     <tr>
       <td style="padding: 12px 0; border-bottom: 1px solid #EEEEEE; font-family: 'Helvetica', Arial, sans-serif; font-size: 13px; color: #1A1A1A;">
         <span style="font-weight: 700;">${item.product_name}</span>
+        
+        ${
+          item.variant_name || item.variantLabel
+            ? `<div style="font-size: 9px; color: #999999; margin-top: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                ${item.variant_name || item.variantLabel}
+              </div>`
+            : ''
+        }
       </td>
       <td align="center" style="padding: 12px 0; border-bottom: 1px solid #EEEEEE; font-family: 'Helvetica', Arial, sans-serif; font-size: 13px; color: #666666;">
         ${item.quantity}
@@ -232,8 +295,8 @@ function generateAdminOrderEmailHtml(doc: any) {
                             <td width="50%" valign="top" style="padding-left: 20px;">
                               <span style="font-family: 'Helvetica', sans-serif; font-size: 9px; font-weight: 900; color: #999999; text-transform: uppercase; letter-spacing: 1.5px;">Payment</span><br/>
                               <div style="font-family: 'Helvetica', sans-serif; font-size: 13px; font-weight: 700; color: #000000; margin-top: 6px;">
-                                ${doc.payment_method.toUpperCase()}<br/>
-                                <span style="font-weight: 400; font-size: 12px; color: #666666;">Status: ${doc.payment_status.toUpperCase()}</span>
+                                ${(doc.payment_method || 'N/A').toUpperCase()}<br/>
+                                <span style="font-weight: 400; font-size: 12px; color: #666666;">Status: ${(doc.payment_status || 'PENDING').toUpperCase()}</span>
                               </div>
                             </td>
                           </tr>
@@ -486,6 +549,99 @@ export const handleOrderStatusUpdate = inngest.createFunction(
         to: doc.customer_email,
         subject: subject,
         html: generateOrderEmailHtml(doc, statusMessage),
+      })
+    })
+  },
+)
+
+export const handleInquiryCreated = inngest.createFunction(
+  { id: 'handle-inquiry-created' },
+  { event: 'inquiry.created' },
+  async ({ event, step }) => {
+    const { inquiryId } = event.data
+
+    // 1. Fetch the inquiry details from Payload
+    const doc = await step.run('fetch-inquiry', async () => {
+      const { getPayload } = await import('payload')
+      const configPromise = await import('@payload-config')
+      const payload = await getPayload({ config: configPromise.default })
+
+      return await payload.findByID({
+        collection: 'inquiries',
+        id: inquiryId,
+      })
+    })
+
+    // 2. Send Emails
+    await step.run('send-inquiry-emails', async () => {
+      const { getPayload } = await import('payload')
+      const configPromise = await import('@payload-config')
+      const payload = await getPayload({ config: configPromise.default })
+
+      // A. Auto-reply to the Customer
+      await payload.sendEmail({
+        to: doc.email,
+        subject: `We've received your message, ${doc.name.split(' ')[0]}`,
+        html: generateInquiryEmailHtml(doc, false),
+      })
+
+      // B. Alert to the Admin Team
+      await payload.sendEmail({
+        to: 'team@boltless.in',
+        subject: `📩 New Inquiry: ${doc.name}`,
+        html: generateInquiryEmailHtml(doc, true),
+      })
+    })
+
+    return { success: true }
+  },
+)
+
+// 2. ORDER SUCCESS HANDLER (Invoice sent here)
+export const handleOrderPaid = inngest.createFunction(
+  { id: 'handle-order-paid' },
+  { event: 'order.paid' },
+  async ({ event, step }) => {
+    const { orderId } = event.data
+
+    const { doc, settings } = await step.run('fetch-order-data', async () => {
+      const { getPayload } = await import('payload')
+      const configPromise = await import('@payload-config')
+      const payload = await getPayload({ config: configPromise.default })
+      const order = await payload.findByID({ collection: 'orders', id: orderId })
+      const bizSettings = await (payload as any).findGlobal({ slug: 'business-settings' })
+      return { doc: order, settings: bizSettings }
+    })
+
+    const invoiceBuffer = await step.run('generate-pdf', async () => {
+      return await generateInvoicePDF(doc, settings)
+    })
+
+    await step.run('send-emails', async () => {
+      const { getPayload } = await import('payload')
+      const configPromise = await import('@payload-config')
+      const payload = await getPayload({ config: configPromise.default })
+
+      // Fix serialization issue for PDF content
+      const pdfContent = (invoiceBuffer as any).data
+        ? Buffer.from((invoiceBuffer as any).data)
+        : Buffer.from(invoiceBuffer as any)
+
+      await payload.sendEmail({
+        to: doc.customer_email,
+        subject: `Payment Successful - Order #${doc.order_number}`,
+        attachments: [{ filename: `Invoice-${doc.order_number}.pdf`, content: pdfContent }],
+        html: generateOrderEmailHtml(
+          doc,
+          'Your payment was successful and your order is confirmed.',
+        ),
+      })
+
+      await payload.sendEmail({
+        to: 'team@boltless.in',
+        subject: `🚨 NEW ORDER - #${doc.order_number}`,
+        attachments: [{ filename: `Invoice-${doc.order_number}.pdf`, content: pdfContent }],
+        html: generateAdminOrderEmailHtml(doc),
       })
     })
   },

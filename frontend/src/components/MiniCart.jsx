@@ -17,7 +17,7 @@ const MiniCart = () => {
 
     const navigate = useNavigate()
 
-    /* ✅ Prevent body scroll when cart open (production behavior) */
+    /* ✅ Prevent body scroll when cart open */
     useEffect(() => {
         document.body.style.overflow = drawerOpen ? "hidden" : "auto"
         return () => (document.body.style.overflow = "auto")
@@ -29,14 +29,12 @@ const MiniCart = () => {
             {/* Overlay */}
             <div
                 onClick={() => setDrawerOpen(false)}
-                className={`absolute inset-0 bg-black/40 backdrop-blur-[3px] transition-opacity duration-500 ${drawerOpen ? "opacity-100" : "opacity-0"
-                    }`}
+                className={`absolute inset-0 bg-black/40 backdrop-blur-[3px] transition-opacity duration-500 ${drawerOpen ? "opacity-100" : "opacity-0"}`}
             />
 
             {/* Drawer */}
             <div
-                className={`absolute right-0 top-0 h-full w-full max-w-[450px] bg-white shadow-2xl transition-transform duration-500 ease-out flex flex-col ${drawerOpen ? "translate-x-0" : "translate-x-full"
-                    }`}
+                className={`absolute right-0 top-0 h-full w-full max-w-[450px] bg-white shadow-2xl transition-transform duration-500 ease-out flex flex-col ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
             >
                 {/* Header */}
                 <div className="px-8 py-7 flex justify-between items-center border-b border-gray-50">
@@ -72,20 +70,20 @@ const MiniCart = () => {
                         </div>
                     ) : (
                         detailedCart.map(item => {
+                            /* ✅ Unique key for React using both ID and Variant ID */
+                            const itemKey = `${item.id}-${item.variantId || 'base'}`
 
                             /* ✅ Safe image handling */
                             let img = item.images?.[0]?.url || item.imageSnapshot || null
-
                             if (img && !img.startsWith("http")) {
                                 img = BASE_URL + img
                             }
-
                             if (!img) {
                                 img = "https://via.placeholder.com/300x300?text=No+Image"
                             }
 
                             return (
-                                <div key={item.id} className="flex gap-6 group">
+                                <div key={itemKey} className="flex gap-6 group">
 
                                     {/* Image */}
                                     <div className="w-24 h-24 bg-[#F3F3F1] rounded-2xl overflow-hidden flex-shrink-0">
@@ -101,12 +99,21 @@ const MiniCart = () => {
 
                                         <div>
                                             <div className="flex justify-between items-start mb-1">
-                                                <h3 className="font-bold text-gray-900 uppercase text-[11px] tracking-widest">
-                                                    {item.name}
-                                                </h3>
+                                                <div>
+                                                    <h3 className="font-bold text-gray-900 uppercase text-[11px] tracking-widest">
+                                                        {item.name}
+                                                    </h3>
+
+                                                    {/* ✅ VARIATION LABEL (Injected) */}
+                                                    {item.variantLabel && (
+                                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                                                            {item.variantLabel}
+                                                        </p>
+                                                    )}
+                                                </div>
 
                                                 <button
-                                                    onClick={() => removeItem(item.id)}
+                                                    onClick={() => removeItem(item.id, item.variantId)}
                                                     className="p-1 text-gray-300 hover:text-red-500 transition-colors"
                                                 >
                                                     <Trash2 size={14} />
@@ -132,7 +139,7 @@ const MiniCart = () => {
                                             <div className="flex items-center bg-[#F9F9F9] rounded-full p-1 border border-gray-100 shadow-sm">
 
                                                 <button
-                                                    onClick={() => updateQty(item.id, item.quantity - 1)}
+                                                    onClick={() => updateQty(item.id, item.variantId, item.quantity - 1)}
                                                     disabled={item.quantity <= 1}
                                                     className="p-1 hover:bg-white hover:shadow-sm rounded-full transition-all disabled:opacity-30"
                                                 >
@@ -144,7 +151,7 @@ const MiniCart = () => {
                                                 </span>
 
                                                 <button
-                                                    onClick={() => updateQty(item.id, item.quantity + 1)}
+                                                    onClick={() => updateQty(item.id, item.variantId, item.quantity + 1)}
                                                     className="p-1 hover:bg-white hover:shadow-sm rounded-full transition-all"
                                                 >
                                                     <Plus size={12} />
@@ -187,7 +194,7 @@ const MiniCart = () => {
                             setDrawerOpen(false)
                             navigate("/checkout")
                         }}
-                        className="w-full bg-black text-white py-5 rounded-full"
+                        className="w-full bg-black text-white py-5 rounded-full font-bold uppercase text-xs tracking-widest hover:bg-gray-900 transition-colors"
                     >
                         Proceed to Checkout
                     </button>

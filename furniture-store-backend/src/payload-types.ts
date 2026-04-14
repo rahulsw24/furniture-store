@@ -75,6 +75,7 @@ export interface Config {
     coupons: Coupon;
     inquiries: Inquiry;
     subscribers: Subscriber;
+    'variation-types': VariationType;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +91,7 @@ export interface Config {
     coupons: CouponsSelect<false> | CouponsSelect<true>;
     inquiries: InquiriesSelect<false> | InquiriesSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
+    'variation-types': VariationTypesSelect<false> | VariationTypesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -218,32 +220,56 @@ export interface Product {
   id: number;
   name: string;
   slug: string;
+  product_type?: ('simple' | 'variable') | null;
   /**
-   * Use --- to separate story sections. First line of each section is the title.
+   * Use --- to separate story sections.
    */
   description: string;
   /**
-   * Paste "About this item" bullets here. Use TITLE: Description format.
+   * Paste "About this item" bullets here.
    */
   highlights?: string | null;
-  /**
-   * One dimension per line.
-   */
+  variants?:
+    | {
+        variant_name: string;
+        selected_options?:
+          | {
+              /**
+               * Select a variation type (e.g. Length)
+               */
+              type: number | VariationType;
+              value: string;
+              id?: string | null;
+            }[]
+          | null;
+        price: number;
+        stock: number;
+        /**
+         * Optional: Specific image for this variation
+         */
+        variant_image?: (number | null) | Media;
+        id?: string | null;
+      }[]
+    | null;
   dimensions?: string | null;
-  /**
-   * One material per line.
-   */
   materials?: string | null;
   price: number;
-  /**
-   * Leave blank if not on sale
-   */
   compare_price?: number | null;
   images: (number | Media)[];
   category: number | Category;
-  stock: number;
+  stock?: number | null;
   low_stock_threshold?: number | null;
   is_active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variation-types".
+ */
+export interface VariationType {
+  id: number;
+  name: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -262,6 +288,7 @@ export interface Order {
     product: number | Product;
     product_name: string;
     product_image?: string | null;
+    variantId?: string | null;
     quantity: number;
     unit_price: number;
     subtotal: number;
@@ -401,6 +428,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'subscribers';
         value: number | Subscriber;
+      } | null)
+    | ({
+        relationTo: 'variation-types';
+        value: number | VariationType;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -524,8 +555,25 @@ export interface CategoriesSelect<T extends boolean = true> {
 export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  product_type?: T;
   description?: T;
   highlights?: T;
+  variants?:
+    | T
+    | {
+        variant_name?: T;
+        selected_options?:
+          | T
+          | {
+              type?: T;
+              value?: T;
+              id?: T;
+            };
+        price?: T;
+        stock?: T;
+        variant_image?: T;
+        id?: T;
+      };
   dimensions?: T;
   materials?: T;
   price?: T;
@@ -554,6 +602,7 @@ export interface OrdersSelect<T extends boolean = true> {
         product?: T;
         product_name?: T;
         product_image?: T;
+        variantId?: T;
         quantity?: T;
         unit_price?: T;
         subtotal?: T;
@@ -636,6 +685,15 @@ export interface InquiriesSelect<T extends boolean = true> {
  */
 export interface SubscribersSelect<T extends boolean = true> {
   email?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variation-types_select".
+ */
+export interface VariationTypesSelect<T extends boolean = true> {
+  name?: T;
   updatedAt?: T;
   createdAt?: T;
 }
